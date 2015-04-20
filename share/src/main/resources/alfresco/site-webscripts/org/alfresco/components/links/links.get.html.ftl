@@ -26,7 +26,7 @@
                   <div class="separator hideable"> </div>
                </div>
                <div style="float:left" class="btn-selected-items">
-                  <button id="${el}-selected-i-dd" name="linklist-create-link-button">${msg("header.selectedItems")}</button>
+                  <button id="${el}-selected-i-dd" name="linklist-create-link-button">${msg("header.selectedItems")}&nbsp;&#9662;</button>
                   <div id="${el}-selectedItems-menu" class="yuimenu">
                      <div class="bd">
                         <ul>

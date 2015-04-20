@@ -61,7 +61,7 @@
       </@markup>
       
       <@markup id="footer">
-         <div class="copy">${msg("label.copyright")}</div>
+         <div class="copy">${msg("label.copyright.byloftux")}</div>
       </@markup>
       
       <@markup id="preloader">
