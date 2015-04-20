@@ -29,7 +29,7 @@ position: absolute;
 width: 100%;
 border: 1px solid #808080;
 background: #fff;
-overflow: hidden;	
+overflow: hidden;
 z-index: 9050;
 }
 .yui-skin-yellowTheme .yui-ac-shadow {
@@ -4718,4 +4718,3 @@ display: none;
 text-align: right;
 margin: auto;
 }
-
