@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.alfresco.web.site.SlingshotPageView;
 import org.alfresco.web.site.SlingshotUser;
 import org.alfresco.web.site.SlingshotUserFactory;
 import org.json.simple.JSONObject;
@@ -65,7 +66,11 @@ public class SlingshotLoginController extends LoginController
     protected void onSuccess(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         this.beforeSuccess(request, response);
-        super.onSuccess(request, response);
+        if (request.getSession().getAttribute(SlingshotPageView.REDIRECT_URI) == null)
+        {
+           super.onSuccess(request, response);
+        }
+
     }
     
     protected void beforeSuccess(HttpServletRequest request, HttpServletResponse response) throws Exception

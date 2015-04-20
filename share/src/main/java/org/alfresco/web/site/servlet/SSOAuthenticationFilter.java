@@ -558,6 +558,11 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
         {
             if (debug) logger.debug("New auth request from " + req.getRemoteHost() + " (" +
                                     req.getRemoteAddr() + ":" + req.getRemotePort() + ")");
+
+            // Start with storing the current request url so that when authentication is done
+            // the user will end up at the requested page.
+            setRedirectUrl(req);
+
             challengeOrPassThrough(chain, req, res, session);
             return;
         }
@@ -737,11 +742,24 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
     {
         if (logger.isDebugEnabled())
             logger.debug("Clearing the session.");
+
+        // Store the REDIRECT_URI REDIRECT_QUERY attributes so that we can set them back after clearing
+        String requestURI = (String) session.getAttribute(REDIRECT_URI);
+        String redirectQuery = (String) session.getAttribute(REDIRECT_QUERY);
+
         Enumeration<String> names = (Enumeration<String>) session.getAttributeNames();
         while (names.hasMoreElements())
         {
             session.removeAttribute(names.nextElement());
         }
+
+        // Set stored attributes again
+        session.setAttribute(REDIRECT_URI, requestURI);
+        if (redirectQuery != null)
+        {
+            session.setAttribute(REDIRECT_QUERY, redirectQuery);
+        }
+
     }
 
     /**
@@ -926,8 +944,7 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
 
         // Clear any cached logon details from the sessiom
         clearSession(session);
-        setRedirectUrl(req);
-        
+
         // restart the authentication process for NTLM
         res.setHeader(HEADER_WWWAUTHENTICATE, authHdr);
         res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
