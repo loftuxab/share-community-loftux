@@ -67,6 +67,7 @@ import org.alfresco.po.share.site.contentrule.createrules.CreateRulePage;
 import org.alfresco.po.share.site.datalist.DataListPage;
 import org.alfresco.po.share.site.datalist.NewListForm;
 import org.alfresco.po.share.site.discussions.DiscussionsPage;
+import org.alfresco.po.share.site.document.ChangeTypePage;
 import org.alfresco.po.share.site.document.CopyOrMoveContentPage;
 import org.alfresco.po.share.site.document.CreateHtmlContentPage;
 import org.alfresco.po.share.site.document.CreatePlainTextContentPage;
@@ -78,6 +79,7 @@ import org.alfresco.po.share.site.document.FolderDetailsPage;
 import org.alfresco.po.share.site.document.InlineEditPage;
 import org.alfresco.po.share.site.document.ManagePermissionsPage;
 import org.alfresco.po.share.site.document.MyFilesPage;
+import org.alfresco.po.share.site.document.SelectAspectsPage;
 import org.alfresco.po.share.site.document.SharedFilesPage;
 import org.alfresco.po.share.site.document.TagPage;
 import org.alfresco.po.share.site.document.ViewPropertiesPage;
@@ -655,6 +657,14 @@ public class FactorySharePage implements PageFactory
                 else if(dialogueID.contains("cloud-folder-title"))
                 {
                     sharePage = new DestinationAndAssigneePage(drone);
+                }
+                else if(dialogueID.contains("changeType"))
+                {
+                    sharePage = new ChangeTypePage(drone);
+                }
+                if(dialogueID.contains("default-aspects"))
+                {
+                    sharePage = new SelectAspectsPage(drone);
                 }
             }
         }

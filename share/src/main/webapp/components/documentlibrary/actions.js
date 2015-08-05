@@ -521,13 +521,11 @@
 
          //MNT-11084 : Full screen/window view: Actions works incorrectly;
          var parent = undefined;
-         var container = Dom.get(this.id);
-         var ua = navigator.userAgent.toLowerCase();
-         if ((ua.indexOf('gecko') != -1 || ua.indexOf('safari')!=-1) && ua.indexOf('chrome')==-1)
+         if (Dom.hasClass(this.id, 'alf-true-fullscreen'))
          {
-            parent = container;
+            parent = Dom.get(this.id);
          }
-		 
+
          var buttons =
          [
             {
@@ -587,8 +585,9 @@
             title: this.msg("actions." + content + ".delete"),
             text: displayPromptText,
             noEscape: true,
-            buttons: buttons
-         });
+            buttons: buttons,
+            zIndex: zIndex
+         }, parent);
       },
 
       /**
@@ -607,6 +606,11 @@
             displayName = record.displayName,
             nodeRef = jsNode.nodeRef,
             parentNodeRef = this.getParentNodeRef(record);
+            var display =
+            {
+               zIndex: this.fullscreen !== undefined && ( Dom.hasClass(this.id, 'alf-true-fullscreen') || Dom.hasClass(this.id, 'alf-fullscreen')) ? 1000 : 0,
+               parentElement: Dom.hasClass(this.id, 'alf-true-fullscreen') ? Dom.get(this.id) : undefined
+            }
 
          this.modules.actions.genericAction(
          {
@@ -633,6 +637,7 @@
                      path: filePath
                   }
                },
+               display : display,
                message: this.msg("message.delete.success", displayName),
                callback:
                {
@@ -648,6 +653,7 @@
             },
             failure:
             {
+               display : display,
                message: this.msg("message.delete.failure", displayName)
             },
             webscript:
@@ -1808,6 +1814,12 @@
             zIndex = 1000;
          }
 
+         var parentElement = undefined;
+         if (Dom.hasClass(this.id, 'alf-true-fullscreen'))
+         {
+            parentElement = Dom.get(this.id);
+         }
+
          var repoPath = record[0] ? record[0].location.repoPath : record.location.repoPath;
          this.modules.copyMoveTo.setOptions(
          {
@@ -1820,7 +1832,8 @@
             /* Fix for MNT-12432. Do not overwrite this.modules.copyMoveTo.options.rootNode option if repoBrowsing is enabled. Could cause Repository tab view inconsistency */
             rootNode: this.options.repositoryBrowsing ? this.modules.copyMoveTo.options.rootNode : this.options.rootNode,
             parentId: this.getParentNodeRef(record),
-            zIndex: zIndex
+            zIndex: zIndex,
+            parentElement : parentElement ? parentElement : undefined
          }).showDialog();
       },
 

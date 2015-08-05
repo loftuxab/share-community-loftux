@@ -10,6 +10,12 @@
     <description>Alfresco Web Framework common libraries</description>
     <packaging>war</packaging>
 
+    <properties>
+        <sonar.exclusions>
+            src/main/webapp/modules/editors/tinymce/**
+        </sonar.exclusions>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.extensions.surf</groupId>
@@ -40,33 +46,33 @@
         <dependency>
             <groupId>org.alfresco</groupId>
             <artifactId>alfresco-remote-api</artifactId>
-            <version>${project.version}</version>
+            <version>${alfresco.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>alfresco-repository</artifactId>
-            <version>${project.version}</version>
+            <version>${alfresco.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>alfresco-core</artifactId>
-            <version>${project.version}</version>
+            <version>${dependency.alfresco-core.version}</version>            
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>alfresco-repository</artifactId>
-            <version>${project.version}</version>
+            <version>${alfresco.platform.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.alfresco</groupId>
             <artifactId>alfresco-remote-api</artifactId>
-            <version>${project.version}</version>
+            <version>${alfresco.platform.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
@@ -161,33 +167,6 @@
          </activation>
          <build>
              <plugins>
-                 <!-- Wipe the database before starting tests -->
-                 <plugin>
-                     <groupId>org.codehaus.mojo</groupId>
-                     <artifactId>sql-maven-plugin</artifactId>
-                     <executions>
-                         <execution>
-                             <id>wipe-database</id>
-                             <phase>pre-clean</phase>
-                             <goals>
-                                 <goal>execute</goal>
-                             </goals>
-                             <configuration>
-                                 <sqlCommand>${db.drop.command}</sqlCommand>
-                             </configuration>
-                         </execution>
-                         <execution>
-                             <id>create-database</id>
-                             <phase>pre-clean</phase>
-                             <goals>
-                                 <goal>execute</goal>
-                             </goals>
-                             <configuration>
-                                 <sqlCommand>${db.create.command}</sqlCommand>
-                             </configuration>
-                         </execution>
-                     </executions>
-                 </plugin>
                  <plugin>
                      <artifactId>maven-surefire-plugin</artifactId>
                      <executions>

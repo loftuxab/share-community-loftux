@@ -84,17 +84,16 @@ public class MessagesWebScript extends org.springframework.extensions.webscripts
         }
         writer.write(";\r\n");
 
-        // start logo
-        
-        // community logo
-        // community logo
-        // Loftux - Commented out #15
-        // final String serverPath = req.getServerPath();
-        // final int schemaIndex = serverPath.indexOf(':');
-        // writer.write("window.setTimeout(function(){(document.getElementById('alfresco-yuiloader')||document.createElement('div')).innerHTML = '<img src=\"");
-        // writer.write(serverPath.substring(0, schemaIndex));
-        // writer.write("://www.alfresco.com/assets/images/logos/community-5.0-share.png\" alt=\"*\" style=\"display:none\"/>\'}, 100);\r\n");
-        // end logo
+        if (isCommunity())
+        {
+            // community logo
+            // Loftux - Commented out #15
+            // final String serverPath = req.getServerPath();
+            // final int schemaIndex = serverPath.indexOf(':');
+            // writer.write("window.setTimeout(function(){(document.getElementById('alfresco-yuiloader')||document.createElement('div')).innerHTML = '<img src=\"");
+            // writer.write(serverPath.substring(0, schemaIndex));
+            // writer.write("://www.alfresco.com/assets/images/logos/community-5.0-share.png\" alt=\"*\" style=\"display:none\"/>\'}, 100);\r\n");
+        }
 
         return writer.toString();
     }
@@ -111,17 +110,18 @@ public class MessagesWebScript extends org.springframework.extensions.webscripts
         StringBuilder sb = new StringBuilder(512);
         sb.append(";\r\n");
 
-        // start logo
+        if (isCommunity())
+        {
+            // community logo
+            // Loftux - Commented out #15
+            // final String serverPath = req.getServerPath();
+            // final int schemaIndex = serverPath.indexOf(':');
+            // sb.append("window.setTimeout(function(){(document.getElementById('alfresco-yuiloader')||document.createElement('div')).innerHTML = '<img src=\"");
+            // sb.append(serverPath.substring(0, schemaIndex));
+            // sb.append("://www.alfresco.com/assets/images/logos/community-5.0-share.png\" alt=\"*\" style=\"display:none\"/>\'}, 100);\r\n");
+        }
 
-        // community logo
-        // community logo
-        // Loftux - Commented out #15
-        // final String serverPath = req.getServerPath();
-        // final int schemaIndex = serverPath.indexOf(':');
-        // sb.append("window.setTimeout(function(){(document.getElementById('alfresco-yuiloader')||document.createElement('div')).innerHTML = '<img src=\"");
-        // sb.append(serverPath.substring(0, schemaIndex));
-        // sb.append("://www.alfresco.com/assets/images/logos/community-5.0-share.png\" alt=\"*\" style=\"display:none\"/>\'}, 100);\r\n");
-        // end logo
+
         return sb.toString();
     }
     
@@ -135,5 +135,24 @@ public class MessagesWebScript extends org.springframework.extensions.webscripts
             licensed = (EditionInterceptor.ENTERPRISE_EDITION.equals(edition));
         }
         return licensed;
+    }
+    
+    /**
+     * Verifies if the licence edition is community
+     * @return true if the edition was successfuly retrieved and is UNKNOWN_EDITION , false otherwise
+     */
+    private boolean isCommunity()
+    {
+        final RequestContext rc = ThreadLocalRequestContext.getRequestContext();
+        if (rc != null)
+        {
+            EditionInfo editionInfo = ((EditionInfo)rc.getValue(EditionInterceptor.EDITION_INFO));
+            if (editionInfo.getValidResponse()) 
+            { 
+                return EditionInterceptor.UNKNOWN_EDITION.equals(editionInfo.getEdition()); 
+            }
+            //else, could not retrieve licence info from server
+        }
+        return false;
     }
 }

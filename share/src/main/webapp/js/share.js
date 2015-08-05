@@ -2081,9 +2081,9 @@ var DASHLET_TITLE_BAR_ACTIONS_OPACITY = 0,
           *
           * @property minDashletHeight
           * @type int
-          * @default 100
+          * @default 140
           */
-         minDashletHeight: 110,
+         minDashletHeight: 140,
 
          /**
           * Maximum Dashlet height.

@@ -95,9 +95,9 @@ public class OutputJavaScriptContentModelElement extends DependencyDeferredConte
     
     /**
      * Handles adding JavaScript dependencies and inline script content. 
-     * @param fileName
-     * @param groupName
-     * @param forAggregation
+     * @param fileName String
+     * @param groupName String
+     * @param forAggregation boolean
      */
     public void addJavaScriptFile(String fileName, String groupName, boolean forAggregation)
     {
@@ -170,8 +170,8 @@ public class OutputJavaScriptContentModelElement extends DependencyDeferredConte
      * instances can be manipulated to add/remove/change dependency requests). However, we want to only output Dojo dependencies
      * if they have <b>not</b> requested via a <{@code}@script> directive.
      * 
-     * @param fileName
-     * @param group
+     * @param fileName String
+     * @param group String
      */
     public void addNonAmdJavaScriptFile(String fileName, 
                                         String group)
@@ -250,19 +250,29 @@ public class OutputJavaScriptContentModelElement extends DependencyDeferredConte
         }
         
         // Process the dependencies into JavaScript output...
-        StringBuilder content = new StringBuilder();
-        // Temporailty commented out for ACE-1354
-//        if (javaScriptFiles.size() != 0 || aggJavaScriptFiles.size() != 0)
-//        {
-//            // we either output a lot here or nothing at all
-//            content.setLength(20480);
-//        }
-        content.append(generateJavaScriptDependencies(javaScriptFiles, false));
-        content.append(generateJavaScriptDependencies(aggJavaScriptFiles, true));
+        int bufferSize = 0;
+        bufferSize += 2048 * this.javaScriptFiles.size() * 3;
+        bufferSize += 256 * this.aggJavaScriptFiles.size();
+        bufferSize += 256 * this.dojoNonAmdFiles.size();
+        final StringBuilder content = new StringBuilder(bufferSize);
+        
+        // Append JavaScript for standard and aggregated JavaScript files
+        if (this.javaScriptFiles.size() != 0)
+        {
+            content.append(generateJavaScriptDependencies(this.javaScriptFiles, false));
+        }
+        if (this.aggJavaScriptFiles.size() != 0)
+        {
+            content.append(generateJavaScriptDependencies(this.aggJavaScriptFiles, true));
+        }
         
         // Filter out any already requested dependencies from those requested by Dojo widgets...
-        LinkedHashMap<String, LinkedHashSet<String>> filteredNonAmdFiles = this.filterJsDependencies(this.dojoNonAmdFiles);
-        content.append(generateJavaScriptDependencies(filteredNonAmdFiles, true));
+        if (this.dojoNonAmdFiles.size() != 0)
+        {
+            LinkedHashMap<String, LinkedHashSet<String>> filteredNonAmdFiles = this.filterJsDependencies(this.dojoNonAmdFiles);
+            content.append(generateJavaScriptDependencies(filteredNonAmdFiles, true));
+        }
+        
         return content.toString();
     }
     
@@ -273,7 +283,7 @@ public class OutputJavaScriptContentModelElement extends DependencyDeferredConte
      * otherwise it is handled within the method.</p>
      * 
      * @param dependencies The dependencies to create the correct output for.
-     * @return
+     * @return StringBuilder
      */
     protected StringBuilder generateJavaScriptDependencies(HashMap<String, LinkedHashSet<String>> dependencies, boolean aggregate)
     {
@@ -320,8 +330,9 @@ public class OutputJavaScriptContentModelElement extends DependencyDeferredConte
      * <p>Method for adding a single JavaScript dependency to the supplied String builder, e.g.
      * <{@code}script type="text/javascript" src="src"><{@code}/script>
      * 
-     * @param jsDeps
-     * @param src
+     * @param jsDeps StringBuilder
+     * @param src String
+     * @param group String
      */
     protected void appendJavaScriptDependency(StringBuilder jsDeps, String src, String group)
     {

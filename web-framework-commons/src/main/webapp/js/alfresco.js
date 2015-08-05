@@ -263,7 +263,7 @@ Alfresco.util.onlineEditUrl = function(vtiServer, location)
    // Thor: used by overridden JS to place the tenant domain into the URL.
    var tenant = location.tenant ? location.tenant : "";
    var onlineEditUrl = vtiServer.host + ":" + vtiServer.port + "/" +
-      Alfresco.util.combinePaths(vtiServer.contextPath, tenant, location.site ? location.site.name : "", location.container ? location.container.name : "", location.path.replace(/#/g,"%23"), location.file.replace(/#/g,"%23"));
+      Alfresco.util.combinePaths(vtiServer.contextPath, tenant, (location.container && location.site) ? location.site.name : "", location.container ? encodeURIComponent(location.container.name) : "", encodeURIComponent(location.container ? location.path : location.path.substring(location.path.indexOf("/", 1))).replace(/%2F/g, "/"), encodeURIComponent(location.file));
    if (!(/^(http|https):\/\//).test(onlineEditUrl))
    {
       // Did they specify the protocol on the vti server bean?
@@ -6993,7 +6993,7 @@ Alfresco.util.PopupManager = function()
                effect: c.effect,
                duration: c.effectDuration
             },
-            zIndex: this.zIndex++
+            zIndex: (c.zIndex == undefined ? 0 : c.zIndex) + this.zIndex++
          };
          // IE browsers don't deserve fading, as they can't handle it properly
          if (c.effect === null || YAHOO.env.ua.ie > 0)
@@ -7176,7 +7176,7 @@ Alfresco.util.PopupManager = function()
          // MNT-11084 Full screen/window view: Actions works incorrectly; 
          if (c.zIndex !== undefined && c.zIndex > 0)
          {
-            var index = c.zIndex + this.zIndex - 1;
+            var index = c.zIndex + this.zIndex;
             var onBeforeShow = function () 
             {
                element = Dom.get("prompt_mask");
@@ -11114,14 +11114,6 @@ Alfresco.util.RENDERLOOPSIZE = 25;
                else if (response.json && response.json.message && response.json.message.indexOf("PropertyValueSizeIsMoreMaxLengthException") !== -1)
                {
                     failureMsg = this.msg("message.details.failure.more.max.length");
-               }
-               else if (response.json && response.json.message && response.json.message.indexOf("org.alfresco.error.AlfrescoRuntimeException") == 0)
-               {  
-                  var split =  response.json.message.split(/(?:org.alfresco.error.AlfrescoRuntimeException:\s*\d*\s*)/ig);
-                  if (split && split[1])
-                  {
-                        failureMsg = split[1];
-                  }
                }
                Alfresco.util.PopupManager.displayPrompt(
                {

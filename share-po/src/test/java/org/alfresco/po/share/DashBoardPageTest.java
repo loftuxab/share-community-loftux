@@ -34,13 +34,13 @@ import org.testng.annotations.Test;
 @Listeners(FailedTestListener.class)
 public class DashBoardPageTest extends AbstractTest
 {
+    DashBoardPage dashBoard;
+
     /**
      * Test process of accessing dashboard page.
      *
      * @throws Exception
      */
-    DashBoardPage dashBoard;
-
     @Test(groups = "alfresco-one")
     public void loadDashBoard() throws Exception
     {
@@ -88,7 +88,39 @@ public class DashBoardPageTest extends AbstractTest
         AboutPopUp aboutPopUp = dashBoardPage.openAboutPopUp();
         Assert.assertNotNull(aboutPopUp.getLogoUrl());
     }
-
+    
+    @Test(dependsOnMethods = "checkOpenAboutPopUpLogo", groups = "alfresco-one")
+    public void clickViewTutorialsLink()
+    {
+        drone.refresh();
+        DashBoardPage dashBoardPage = drone.getCurrentPage().render();
+        dashBoardPage.clickTutorialsLink();
+        String mainWindow = drone.getWindowHandle();
+        waitInSeconds(3);
+        AlfrescoVersion version = drone.getProperties().getVersion();
+        if (!version.isCloud())
+        {
+            Assert.assertTrue(isWindowOpened("Alfresco One video tutorials"));
+        }
+        else
+        {
+            Assert.assertTrue(isWindowOpened("Video tutorials"));
+        }      
+        drone.closeWindow();
+        drone.switchToWindow(mainWindow);        
+    }
+    
+    @Test(dependsOnMethods = "clickViewTutorialsLink", groups = "Enterprise-only")
+    public void checkVersionsFromPopUpLogo()
+    {
+        drone.refresh();
+        DashBoardPage dashBoardPage = drone.getCurrentPage().render();
+        AboutPopUp aboutPopUp = dashBoardPage.openAboutPopUp();
+        String versionsDetail = aboutPopUp.getVersionsDetail();
+        Assert.assertTrue(aboutPopUp.isVersionsDetailDisplayed());
+        Assert.assertTrue(versionsDetail.contains("Aikau") && versionsDetail.contains("Spring Surf") && versionsDetail.contains("Spring WebScripts"));
+    }
+    
     @Test(dependsOnMethods = "refreshPage", enabled = false, groups = "nonGrid")
     public void testKeysForHeaderBar() throws Exception
     {
