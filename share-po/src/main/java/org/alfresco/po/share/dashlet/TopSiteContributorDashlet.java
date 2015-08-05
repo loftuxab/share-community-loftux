@@ -138,7 +138,7 @@ public class TopSiteContributorDashlet extends AbstractDashlet implements Dashle
         for (WebElement pieChartSlice : pieChartSlices)
         {
             drone.mouseOver(pieChartSlice);
-            drone.mouseOverOnElement(pieChartSlice);
+            drone.mouseOver(pieChartSlice);
             WebElement tooltipElement = drone.findAndWait(By.cssSelector(TOOLTIP_DATA));
             String user = getElement(tooltipElement.getAttribute(ORIGINAL_TITLE_ATTRIBUTE), "/table/tr/td/div/strong");
             users.add(user);
@@ -203,7 +203,7 @@ public class TopSiteContributorDashlet extends AbstractDashlet implements Dashle
     /**
      * Enters to date into calendar
      * 
-     * @param fromDate
+     * @param toDate String
      * @return
      */
     public HtmlPage enterToDate(final String toDate)

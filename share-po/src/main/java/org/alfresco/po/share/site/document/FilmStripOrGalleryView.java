@@ -643,6 +643,13 @@ public abstract class FilmStripOrGalleryView extends FileDirectoryInfoImpl
         clickInfoIcon(true);
         return super.selectCopyTo();
     }
+    
+    @Override
+    public CopyOrMoveContentPage selectCopyToOnFolderCloud()
+    {
+        clickInfoIcon(false);
+        return super.selectCopyToOnFolderCloud();
+    }
 
     /*
      * (non-Javadoc)
@@ -841,12 +848,12 @@ public abstract class FilmStripOrGalleryView extends FileDirectoryInfoImpl
 
     private void focusOnDocLibFooter()
     {
-        drone.mouseOverOnElement(drone.findAndWait(By.xpath("//div[contains(@id,'default-doclistBarBottom')]")));
+        drone.mouseOver(drone.findAndWait(By.xpath("//div[contains(@id,'default-doclistBarBottom')]")));
     }
 
     private void focusOnUpButton()
     {
-        drone.mouseOverOnElement(drone.findAndWait(By.cssSelector("button[id$='_default-folderUp-button-button']")));
+        drone.mouseOver(drone.findAndWait(By.cssSelector("button[id$='_default-folderUp-button-button']")));
     }
 
     @Override
@@ -920,7 +927,7 @@ public abstract class FilmStripOrGalleryView extends FileDirectoryInfoImpl
         boolean shareLinkVisible = super.isShareLinkVisible();//findFirstDisplayedElement
         WebElement element = drone.find(By.xpath("//div[@class='alf-detail-thumbnail']/../../.."));
         String id = element.getAttribute("id");
-        drone.mouseOverOnElement(drone.findAndWait(By.cssSelector("button[id$='default-fileSelect-button-button']")));
+        drone.mouseOver(drone.findAndWait(By.cssSelector("button[id$='default-fileSelect-button-button']")));
         drone.waitUntilElementDisappears(By.id(id), 30);
         return shareLinkVisible; 
     }

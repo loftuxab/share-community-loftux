@@ -258,13 +258,6 @@
          {
             record.location.path = record.location.path.substring(7);
          }
-         else
-         {
-            if (window.location.href.search(/\/myfiles/) != -1 && record.location.path.search("/User Homes") == 0)
-            {
-               record.location.path = "/" + record.location.path.split("/").slice(3).join("/");
-            }
-         }
          
          oColumn.width = this.thumbnailColumnWidth;
          Dom.setStyle(elCell, "width", oColumn.width + "px");
@@ -840,14 +833,20 @@
          
          if (elMoreActions.offsetHeight > visibleHeight)
          {
-            Dom.setStyle(elMoreActions , "margin-top" , - (elMore.offsetHeight + elMoreActions.offsetHeight + 1) + "px" );
+            Dom.setY(elMoreActions, Dom.getY(elMore) - (elMoreActions.offsetHeight + 1));
          }
+         
+         var rBorderMoreX = Dom.getX(elMore) + elMore.offsetWidth;
+         var rBorderMoreActionsX = Dom.getX(elMoreActions) + elMoreActions.offsetWidth;
+         if (rBorderMoreX != rBorderMoreActionsX)
+         {
+            Dom.setX(elMoreActions, (Dom.getX(elMore) + elMore.offsetWidth - elMoreActions.offsetWidth));
+         };
          
          scope.hideMoreActionsFn = function DL_oASM_fnHidePopup()
          {
             scope.hideMoreActionsFn = null;
             
-            Dom.setStyle(elMoreActions , "margin-top" , "" );
             Dom.removeClass(elMore.firstChild, "highlighted");
             Dom.addClass(elMoreActions, "hidden");
          };

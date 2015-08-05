@@ -5,8 +5,10 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import org.alfresco.po.share.enums.Dashlets;
@@ -38,10 +40,12 @@ public class SiteCalendarDashletTest extends AbstractSiteDashletTest
     private static final String EXP_HELP_BALLOON_MSG = "This dashlet shows the upcoming events for this site.";
     CalendarPage calendarPage;
     CustomizeSitePage customizeSitePage;
+    Calendar calendar;
 
     @BeforeClass
     public void setUp() throws Exception
     {
+        calendar = Calendar.getInstance();
         siteName = "siteCalendarDashletTest" + System.currentTimeMillis();
         loginAs("admin", "admin");
         SiteUtil.createSite(drone, siteName, "description", "Public");
@@ -103,8 +107,6 @@ public class SiteCalendarDashletTest extends AbstractSiteDashletTest
         // navigate to calendar page
         calendarPage = siteDashBoard.getSiteNav().selectCalendarPage();
 
-        Calendar calendar = Calendar.getInstance();
-
         int lastDate = calendar.getActualMaximum(Calendar.DATE);
         int todayDate = calendar.get(Calendar.DATE);
 
@@ -142,12 +144,27 @@ public class SiteCalendarDashletTest extends AbstractSiteDashletTest
         String startTime = "7:00 AM";
         String endTime = hour + " " + time;
 
-        
         // compare results
         siteCalendarDashlet = siteDashBoard.getDashlet(SITE_CALENDAR_DASHLET).render();
         boolean result = siteCalendarDashlet.isEventsWithDetailDisplayed(event_dashlet, startTime, endTime);
         Assert.assertTrue(result);
 
+    }
+
+    @Test(dependsOnMethods = "verifyEventCreated")
+    public void verifyIsEventsWithHeaderDisplayedNeg()
+    {
+        assertFalse(siteCalendarDashlet.isEventsWithHeaderDisplayed("test-negative"));
+    }
+
+    @Test(dependsOnMethods = "verifyEventCreated", groups = "Bug")
+    public void verifyIsEventsWithHeaderDisplayed()
+    {
+        Date today = calendar.getTime();
+        SimpleDateFormat newDateFormat = new SimpleDateFormat("EEEE, d MMMM, yyyy");
+        String eventHeader = newDateFormat.format(today);
+
+        assertTrue(siteCalendarDashlet.isEventsWithHeaderDisplayed(eventHeader));
     }
 
 }

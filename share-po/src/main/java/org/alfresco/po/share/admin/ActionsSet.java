@@ -36,7 +36,7 @@ public class ActionsSet
     /**
      * Instantiates a new actions set.
      * 
-     * @param webDrone the web drone
+     * @param drone the web drone
      * @param element the element
      */
     public ActionsSet(WebDrone drone, WebElement element)
@@ -128,7 +128,7 @@ public class ActionsSet
     private List<WebElement> getMenuRows()
     {
         // Click the control to open the menu
-        drone.mouseOverOnElement(control);
+        drone.mouseOver(control);
         control.click();
 
         // Compose the selector for the drop down menu

@@ -54,7 +54,6 @@ public class CloudSignInPageTest extends AbstractTest
     public void prepare() throws Exception
     {
         dashBoardPage = loginAs(username, password);
-
         siteName = "site" + System.currentTimeMillis();
         loginTestFile = SiteUtil.prepareFile("SyncFailFile");
         SiteUtil.createSite(drone, siteName, "description", "Public");
@@ -95,6 +94,7 @@ public class CloudSignInPageTest extends AbstractTest
     @Test(groups = { "Hybrid" }, dependsOnMethods = "testSelectFogotPassordLink")
     public void testSelectSignUpLink() throws Exception
     {
+        assertTrue(cloudSignInPage.isSignUpLinkDisplayed(), "The Sign up for free link not displayed");
         cloudSignInPage.selectSignUpLink();
         switchWindow();
         assertTrue(drone.getTitle().contains("Cloud Document Management"), "Title not matched. Was found to be - " + drone.getTitle());
@@ -148,8 +148,7 @@ public class CloudSignInPageTest extends AbstractTest
         cloudSignInPage.loginAs(cloudUserName, cloudUserPassword).render();
         Assert.assertTrue(cloudSyncPage.isDisconnectButtonDisplayed());
         cloudSyncPage.disconnectCloudAccount().render();
-
-        DocumentLibraryPage documentLibraryPage = openSiteDocumentLibraryFromSearch(drone, siteName);
+        DocumentLibraryPage documentLibraryPage = openSiteDocumentLibraryFromSearch(drone, siteName).render();
         cloudSignInPage = documentLibraryPage.getFileDirectoryInfo(loginTestFile.getName()).selectSyncToCloud().render();
         DestinationAndAssigneePage destinationAndAssigneePage = cloudSignInPage.loginAs(cloudUserName, cloudUserPassword).render();
         Assert.assertTrue(destinationAndAssigneePage.isNetworkDisplayed(cloudUserName.split("@")[1]));
@@ -176,11 +175,9 @@ public class CloudSignInPageTest extends AbstractTest
             cloudSyncPage = cloudSyncPage.disconnectCloudAccount().render();
         }
         cloudSignInPage = cloudSyncPage.selectCloudSign().render();
-
-        cloudSignInPage.loginToCloud(cloudUserName, fakePassword);
+        cloudSignInPage.loginAs(cloudUserName, fakePassword);
         Assert.assertEquals(cloudSignInPage.getAccountNotRecognisedError(), "Email or password not recognised");
         Assert.assertTrue(cloudSignInPage.isAccountNotRecognised());
-
     }
 
     @AfterClass

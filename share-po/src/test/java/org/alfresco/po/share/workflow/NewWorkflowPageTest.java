@@ -40,6 +40,7 @@ import org.alfresco.po.share.task.TaskInfo;
 import org.alfresco.po.share.task.TaskItem;
 import org.alfresco.po.share.task.TaskStatus;
 import org.alfresco.po.share.util.SiteUtil;
+import org.alfresco.test.AlfrescoTest;
 import org.alfresco.test.FailedTestListener;
 import org.alfresco.webdrone.exception.PageOperationException;
 import org.joda.time.DateTime;
@@ -68,6 +69,7 @@ public class NewWorkflowPageTest extends AbstractTest
     private TaskDetailsPage taskDetailsPage;
     private EditTaskPage editTaskPage;
     private String taskComment;
+    private String uniqueWorkflow;
 
 
     /**
@@ -81,6 +83,7 @@ public class NewWorkflowPageTest extends AbstractTest
         // assertTrue(WebDroneUtilTest.checkAlfrescoVersionBeforeClassRun(drone));
         siteName = "AdhocReassign" + System.currentTimeMillis();
         taskComment = "Comment" + System.currentTimeMillis();
+        uniqueWorkflow = "Unique " + System.currentTimeMillis();
         fileForWorkflow = SiteUtil.prepareFile("WF-File");
         loginAs(username, password);
         SiteUtil.createSite(drone, siteName, "Public");
@@ -94,6 +97,7 @@ public class NewWorkflowPageTest extends AbstractTest
     public void afterClass()
     {
         cancelWorkFlow(siteName);
+        cancelWorkFlow(uniqueWorkflow);
         SiteUtil.deleteSite(drone, siteName);
     }
 
@@ -364,5 +368,28 @@ public class NewWorkflowPageTest extends AbstractTest
         Assert.assertEquals(taskDetailsPage.getTaskStatus(), TaskStatus.COMPLETED);
         Assert.assertEquals(taskDetailsPage.getComment(), taskComment);
         Assert.assertFalse(taskDetailsPage.isEditButtonPresent());
+    }
+
+    @AlfrescoTest(testlink = "AONE-16937")
+    @Test(groups = "Enterprise4.2", dependsOnMethods = "isEditButtonPresent")
+    public void doubleClickStartWorkflow() throws Exception
+    {
+        myTasksPage = taskDetailsPage.getNav().selectMyTasks().render();
+        StartWorkFlowPage startWorkFlowPage = myTasksPage.selectStartWorkflowButton().render();
+
+        newWorkflowPage = ((NewWorkflowPage) startWorkFlowPage.getWorkflowPage(WorkFlowType.NEW_WORKFLOW)).render();
+        List<String> reviewers = new ArrayList<String>();
+        reviewers.add(username);
+        WorkFlowFormDetails formDetails = new WorkFlowFormDetails(siteName, uniqueWorkflow, reviewers);
+
+        newWorkflowPage.enterMessageText(formDetails.getMessage());
+        newWorkflowPage.enterDueDateText(new DateTime().plusDays(2).toString("dd/MM/yyyy"));
+        AssignmentPage assignmentPage = newWorkflowPage.selectReviewer().render();
+        assignmentPage.selectReviewers(formDetails.getReviewers());
+        newWorkflowPage.selectItem(fileForWorkflow.getName(), siteName);
+        myTasksPage = newWorkflowPage.doubleClickStartWorkflow().render();
+
+        Assert.assertTrue(myTasksPage.isTaskNameUnique(uniqueWorkflow));
+
     }
 }

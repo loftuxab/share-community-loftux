@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2014 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  *
  * This file is part of Alfresco
  *
@@ -18,7 +18,6 @@
  */
 package org.alfresco.web.extensibility;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +41,7 @@ import org.springframework.extensions.surf.WebFrameworkServiceRegistry;
 import org.springframework.extensions.surf.exception.ConnectorServiceException;
 import org.springframework.extensions.surf.support.AlfrescoUserFactory;
 import org.springframework.extensions.surf.support.ThreadLocalRequestContext;
+import org.springframework.extensions.surf.util.URLEncoder;
 import org.springframework.extensions.webscripts.ScriptRemote;
 import org.springframework.extensions.webscripts.Status;
 import org.springframework.extensions.webscripts.connector.Connector;
@@ -199,7 +199,7 @@ public class SlingshotEvaluatorUtil {
      * @param siteId The id of the site to retrieve the sitePreset for.
      * @return The site's sitePreset OR null if something goes wrong.
      */
-    @SuppressWarnings({ "unchecked", "deprecation", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public String getSitePreset(RequestContext context, String siteId)
     {
         // Get the preset request cache
@@ -267,7 +267,8 @@ public class SlingshotEvaluatorUtil {
      * Determines whether or not the current user is a member of the supplied group.
      *
      * @param context
-     * @param groupName
+     * @param groups
+     * @param memberOfAllGroups
      * @return
      */
     @SuppressWarnings({ "rawtypes" })
@@ -289,6 +290,17 @@ public class SlingshotEvaluatorUtil {
         // Get the current site
         String currentSite = getSite(context);
 
+        boolean externalAuth = false;
+        RemoteConfigElement config = (RemoteConfigElement) context.getServiceRegistry().getConfigService().getConfig("Remote").getConfigElement("remote");
+        if (config != null)
+        {
+            EndpointDescriptor descriptor = config.getEndpointDescriptor(AlfrescoUserFactory.ALFRESCO_ENDPOINT_ID);
+            if (descriptor != null)
+            {
+                externalAuth = descriptor.getExternalAuth();
+            }
+        }
+
         // Get all the group membership first so that we don't perform this operation multiple times... check
         // the HttpSession and if it's not already available then make a request for it and cache it for future
         // reference. Note that we're ONLY caching the current users membership information.
@@ -302,17 +314,6 @@ public class SlingshotEvaluatorUtil {
             try
             {
                 // Get the Site membership information...
-                boolean externalAuth = false;
-                RemoteConfigElement config = (RemoteConfigElement) context.getServiceRegistry().getConfigService().getConfig("Remote").getConfigElement("remote");
-                if (config != null)
-                {
-                    EndpointDescriptor descriptor = config.getEndpointDescriptor(AlfrescoUserFactory.ALFRESCO_ENDPOINT_ID);
-                    if (descriptor != null)
-                    {
-                        externalAuth = descriptor.getExternalAuth();
-                    }
-                }
-
                 CredentialVault cv = context.getCredentialVault();
                 if (cv != null)
                 {
@@ -326,7 +327,7 @@ public class SlingshotEvaluatorUtil {
                     }
                     String userName = (String)session.getAttribute(UserFactory.SESSION_ATTRIBUTE_KEY_USER_ID);
                     Connector connector = context.getServiceRegistry().getConnectorService().getConnector(SlingshotUserFactory.ALFRESCO_ENDPOINT_ID, userName, ServletUtil.getSession());
-                    Response res = connector.call("/api/people/" + context.getUserId() + "?groups=true");
+                    Response res = connector.call("/api/people/" + URLEncoder.encode(context.getUserId()) + "?groups=true");
                     if (res.getStatus().getCode() == Status.STATUS_OK)
                     {
                         String response = res.getResponse();
@@ -377,15 +378,15 @@ public class SlingshotEvaluatorUtil {
                             CredentialVault cv = context.getCredentialVault();
                             if (cv != null)
                             {
-                                Credentials creds = cv.retrieve("alfresco");
-                                if (creds == null)
+                                Credentials creds = cv.retrieve(AlfrescoUserFactory.ALFRESCO_ENDPOINT_ID);
+                                if (creds == null && !externalAuth)
                                 {
                                     // User is not logged in anymore
                                     return false;
                                 }
-                                String userName = creds.getProperty("cleartextUsername").toString();
-                                Connector connector = context.getServiceRegistry().getConnectorService().getConnector("alfresco", userName, ServletUtil.getSession());
-                                Response res = connector.call("/api/sites/" + currentSite + "/memberships/" + context.getUserId());
+                                String userName = (String)session.getAttribute(UserFactory.SESSION_ATTRIBUTE_KEY_USER_ID);
+                                Connector connector = context.getServiceRegistry().getConnectorService().getConnector(AlfrescoUserFactory.ALFRESCO_ENDPOINT_ID, userName, ServletUtil.getSession());
+                                Response res = connector.call("/api/sites/" + currentSite + "/memberships/" + URLEncoder.encode(context.getUserId()));
                                 if (res.getStatus().getCode() == Status.STATUS_OK)
                                 {
                                     String response = res.getResponse();
@@ -463,8 +464,7 @@ public class SlingshotEvaluatorUtil {
      * provided as a comma delimited string and will convert that string into a List removing trailing
      * whitespace along the way.
      *
-     * @param context
-     * @param evaluationProperties
+     * @param groupsParm
      * @return
      */
     public List<String> getGroups(String groupsParm)

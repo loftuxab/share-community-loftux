@@ -30,7 +30,11 @@ import org.alfresco.webdrone.exception.PageOperationException;
 import org.alfresco.webdrone.exception.PageRenderTimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebElement;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -168,7 +172,7 @@ public class DocumentDetailsPage extends DetailsPage
                     // upload dialog should not be displayed.
                     if (!drone.find(By.cssSelector("div.yui-dt-bd")).isDisplayed())
                     {
-                        docVersionOnScreen = drone.find(By.cssSelector(DOCUMENT_VERSION_PLACEHOLDER)).getText().trim();
+                        docVersionOnScreen = drone.findAndWait(By.cssSelector(DOCUMENT_VERSION_PLACEHOLDER)).getText().trim();
                         // If the text is not what we expect it to be, then repeat
                         if (this.previousVersion != null && docVersionOnScreen.equals(this.previousVersion))
                         {
@@ -897,19 +901,19 @@ public class DocumentDetailsPage extends DetailsPage
     {
         WebElement link = drone.findAndWait(By.cssSelector(LINK_EDIT_IN_GOOGLE_DOCS));
         link.click();
-
         By jsMessage = By.cssSelector("div.bd>span.message");
-
-        // TODO Remove try Catch Block Once Cloud version in 31
+        String text = "Editing in Google Docs";
         try
         {
-            String text = "Editing in Google Docs";
-            drone.waitUntilVisible(jsMessage, text, SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
-            drone.waitUntilNotVisibleWithParitalText(jsMessage, text, SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+            drone.waitUntilElementPresent(jsMessage, SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+            drone.waitUntilElementDeletedFromDom(jsMessage, SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
         }
-        catch (TimeoutException timeoutException)
+        catch (TimeoutException ex)
         {
-
+            if (logger.isDebugEnabled())
+            {
+                logger.error("Alert message hide quickly", ex);
+            }
         }
         String currUrl = drone.getCurrentUrl();
         HtmlPage currPage = drone.getCurrentPage();
@@ -1013,8 +1017,8 @@ public class DocumentDetailsPage extends DetailsPage
         try
         {
             String text = "Editing in Google Docs";
-            drone.waitUntilVisible(jsMessage, text, SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
-            drone.waitUntilNotVisibleWithParitalText(jsMessage, text, SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+            drone.waitUntilVisible(jsMessage, text, 10);
+            drone.waitUntilNotVisibleWithParitalText(jsMessage, text, 10);
         }
         catch (TimeoutException timeoutException)
         {
@@ -1504,7 +1508,7 @@ public class DocumentDetailsPage extends DetailsPage
         {
             return drone.findAndWait(VIEW_WORKING_COPY).isDisplayed();
         }
-        catch (NoSuchElementException nse)
+        catch (NoSuchElementException | TimeoutException e)
         {
             return false;
         }
@@ -1767,12 +1771,12 @@ public class DocumentDetailsPage extends DetailsPage
     {
         try
         {
-            drone.waitForElement(DOCUMENT_BODY, 30);
+            drone.waitForElement(DOCUMENT_BODY, SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
             return drone.find(DOCUMENT_BODY).getText();
         }
         catch (TimeoutException e)
         {
-            throw new PageOperationException("Not able to find the document body. " + e);
+            throw new PageOperationException("Not able to find the document body. ", e);
         }
     }
 
@@ -1882,9 +1886,9 @@ public class DocumentDetailsPage extends DetailsPage
     /**
      * Method to click Cancel Editing in Google Docs
      *
-     * @return DocumentDetailsPage
+     * @return HtmlPage
      */
-    public DocumentDetailsPage clickCancelEditingInGoogleDocs()
+    public HtmlPage clickCancelEditingInGoogleDocs()
     {
         try
         {

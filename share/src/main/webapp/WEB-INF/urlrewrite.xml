@@ -3,8 +3,8 @@
 <urlrewrite use-query-string="true" decode-using="null">
    
    <rule>
-      <from>^/page/(.*dashboard)/$</from>
-      <to type="redirect">/share/page/$1</to>
+      <from>^/page/(.+)/$</from>
+      <to type="redirect">%{context-path}/page/$1</to>
    </rule>
 
    <!-- Quick Share doc -->

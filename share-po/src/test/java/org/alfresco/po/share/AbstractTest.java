@@ -53,8 +53,11 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -108,11 +111,9 @@ public abstract class AbstractTest implements AlfrescoTests
     @Parameters({"contextFileName"})
     public void setupContext(@Optional("share-po-test-context.xml")String contextFileName) throws Exception
     {
-        System.out.println("USING **** " + contextFileName);
-        
         if(logger.isTraceEnabled())
         {
-            logger.trace("Starting test context");
+            logger.trace("Starting test context" + contextFileName );
         }
 
         List<String> contextXMLList = new ArrayList<String>();
@@ -490,7 +491,7 @@ public abstract class AbstractTest implements AlfrescoTests
      * @param fileName
      * @return boolean
      */
-    public static boolean checkIfContentIsSynced(WebDrone driver, String fileName)
+    public boolean checkIfContentIsSynced(WebDrone driver, String fileName)
     {
         DocumentLibraryPage docLibPage = driver.getCurrentPage().render();
         docLibPage = docLibPage.renderItem(maxWaitTime_CloudSync, fileName);
@@ -512,7 +513,16 @@ public abstract class AbstractTest implements AlfrescoTests
 
                     if (status.contains("Pending"))
                     {
-                        driver.waitFor(1000);
+                    	synchronized (this)
+                        {
+                            try
+                            {
+                                this.wait(1000L);
+                            }
+                            catch (InterruptedException e)
+                            {
+                            }
+                        }
                         driver.refresh();
                         docLibPage = driver.getCurrentPage().render();
                         docLibPage = docLibPage.renderItem(maxWaitTime_CloudSync, fileName).render();
@@ -547,7 +557,7 @@ public abstract class AbstractTest implements AlfrescoTests
      * @param driver
      * @return boolean
      */
-    public static boolean checkIfContentIsSynced(WebDrone driver)
+    public boolean checkIfContentIsSynced(WebDrone driver)
     {
         DocumentDetailsPage detailsPage = driver.getCurrentPage().render();
 
@@ -563,7 +573,16 @@ public abstract class AbstractTest implements AlfrescoTests
                     status = detailsPage.getSyncStatus();
                     if (status.contains("Pending") || status.isEmpty())
                     {
-                        driver.waitFor(1000);
+                    	synchronized (this)
+                        {
+                            try
+                            {
+                                this.wait(1000L);
+                            }
+                            catch (InterruptedException e)
+                            {
+                            }
+                        }
                         driver.refresh();
                         detailsPage = driver.getCurrentPage().render();
                     }
@@ -599,6 +618,46 @@ public abstract class AbstractTest implements AlfrescoTests
         DocumentLibraryPage documentLibraryPage = drone.getCurrentPage().render();
         UploadFilePage uploadForm = documentLibraryPage.getNavigation().selectFileUpload().render();
         return uploadForm.uploadFile(filePath).render();
+    }
+    
+    /**
+     * Helper to create a new file, empty or with specified contents if one does not exist. 
+     * Logs if File already exists
+     * 
+     * @param filename String Complete path of the file to be created
+     * @param contents String Contents for text file
+     * @return File
+     */
+    public static File newFile(String filename, String contents)
+    {
+        File file = new File(filename);
+
+        try
+        {
+            if (!file.exists())
+            {
+
+                if (!contents.isEmpty())
+                {
+                    OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), Charset.forName("UTF-8").newEncoder());
+                    writer.write(contents);
+                    writer.close();
+                }
+                else
+                {
+                    file.createNewFile();
+                }
+            }
+            else
+            {
+                logger.debug("Filename already exists: " + filename);
+            }
+        }
+        catch (IOException ex)
+        {
+            logger.error("Unable to create sample file", ex);
+        }
+        return file;
     }
 
 }

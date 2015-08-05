@@ -98,9 +98,9 @@ public class PostViewPage extends BlogPage
     public PostViewPage createBlogComment(String comment)
     {
         PostViewPage postViewPage = new PostViewPage(drone);
-        BlogCommentForm blogCommentForm = postViewPage.clickAddCommentBtn(comment);
+        BlogCommentForm blogCommentForm = postViewPage.clickAddCommentBtn(comment).render();
         blogCommentForm.insertText(comment);
-        blogCommentForm.clickAddComment().render();
+        blogCommentForm.clickAddComment();
         waitUntilAlert();
         if (isCommentPresent(comment))
         {
@@ -116,6 +116,10 @@ public class PostViewPage extends BlogPage
         for (WebElement allTheComments : allComments)
         {
             isPresent = allTheComments.getText().equalsIgnoreCase(comment);
+            if(isPresent)
+            {
+                break;
+            }
         }
         return isPresent;
     }
@@ -223,7 +227,7 @@ public class PostViewPage extends BlogPage
         try
         {
             row = drone.findAndWait(By.xpath(String.format("//div[@class='comment-content']/p[text()='%s']/../..", title)), WAIT_TIME_3000);
-            drone.mouseOverOnElement(row);
+            drone.mouseOver(row);
         }
         catch (NoSuchElementException nse)
         {

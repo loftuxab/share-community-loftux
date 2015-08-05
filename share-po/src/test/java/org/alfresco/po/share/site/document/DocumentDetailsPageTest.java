@@ -7,6 +7,7 @@
  */
 package org.alfresco.po.share.site.document;
 
+import static org.alfresco.po.share.site.document.TinyMceEditor.FormatType.BOLD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -205,7 +206,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         Assert.assertEquals("1", docsPage.getLikeCount());
         Assert.assertTrue(docsPage.isLiked());
         Assert.assertNotNull(docsPage.getToolTipForLike());
-        docsPage = docsPage.selectLike().render();
+        docsPage = docsPage.selectUnlike().render();
         Assert.assertEquals("0", docsPage.getLikeCount());
         Assert.assertFalse(docsPage.isLiked());
         docsPage.getToolTipForFavourite();
@@ -436,7 +437,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
      * 
      * @throws Exception
      */
-    @Test(dependsOnMethods = "editOffline")
+    @Test(dependsOnMethods = "editOffline", groups="communityIssue")
     public void getDocumentBody() throws Exception
     {
         DocumentLibraryPage libraryPage = drone.getCurrentPage().render();
@@ -457,15 +458,35 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
      * 
      * @throws Exception
      */
-    @Test(dependsOnMethods = "getDocumentBody")
+    @Test(dependsOnMethods = "getDocumentBody",groups="communityIssue")
     public void testViewOriginalDocument() throws Exception
     {
         DocumentLibraryPage libraryPage = drone.getCurrentPage().render();
         libraryPage = libraryPage.getFileDirectoryInfo("Test Doc").selectEditOffline().render();
-        DocumentDetailsPage docDetailsPage = libraryPage.selectFile("Test Doc");
-        assertTrue(docDetailsPage.isViewOriginalLinkPresent());
-        docDetailsPage = docDetailsPage.selectViewOriginalDocument();
+        DocumentEditOfflinePage docEditPage = libraryPage.selectFile("Test Doc").render();
+        assertTrue(docEditPage.isViewOriginalLinkPresent());
+        DocumentDetailsPage docDetailsPage = docEditPage.selectViewOriginalDocument().render();
         assertFalse(docDetailsPage.isViewOriginalLinkPresent());
         assertTrue(docDetailsPage.isViewWorkingCopyDisplayed());
+        docDetailsPage.getSiteNav().selectSiteDocumentLibrary().render();
+    }
+    
+    /**
+     * Test the function of view original document
+     * 
+     * @throws Exception
+     */
+    @Test(dependsOnMethods = "testViewOriginalDocument",groups="communityIssue")
+    public void testGetCommentHtml() throws Exception
+    {
+        DocumentLibraryPage libraryPage = drone.getCurrentPage().render();
+        libraryPage = libraryPage.getFileDirectoryInfo("Test Doc").selectCancelEditing().render();
+        DocumentDetailsPage docDetailsPage = libraryPage.selectFile("Test Doc").render();
+        AddCommentForm addCommentForm = docDetailsPage.clickAddCommentButton();
+        TinyMceEditor tinyMceEditor = addCommentForm.getTinyMceEditor();
+        tinyMceEditor.setText("comment");
+        addCommentForm.clickAddCommentButton().render();
+        String htmlComment = docDetailsPage.getCommentHTML("comment");
+        assertFalse(htmlComment.isEmpty());
     }
 }

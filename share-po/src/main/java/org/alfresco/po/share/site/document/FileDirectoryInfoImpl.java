@@ -12,17 +12,6 @@
  */
 package org.alfresco.po.share.site.document;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import org.alfresco.po.share.AlfrescoVersion;
 import org.alfresco.po.share.FactorySharePage;
 import org.alfresco.po.share.exception.AlfrescoVersionException;
@@ -50,6 +39,17 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Entity that models the list of file or directories as it appears on the {@link DocumentLibraryPage}. The list models the HTML element representing
@@ -1209,7 +1209,7 @@ public abstract class FileDirectoryInfoImpl extends HtmlElement implements FileD
         String text = "Editing in Google Docs";
         drone.waitUntilVisible(By.cssSelector("div.bd>span.message"), text, SECONDS.convert(maxTime, MILLISECONDS));
         drone.waitUntilNotVisible(By.cssSelector("div.bd>span.message"), text, SECONDS.convert(maxTime, MILLISECONDS));
-        // drone.waitUntilNotVisibleWithParitalText(By.cssSelector("div.bd>span.message"), text, SECONDS.convert(maxTime, MILLISECONDS));
+        drone.waitUntilNotVisibleWithParitalText(By.cssSelector("div.bd>span.message"), text, SECONDS.convert(maxTime, MILLISECONDS));
         if (!drone.getCurrentUrl().contains(GOOGLE_DOCS_URL))
         {
             return new GoogleDocsAuthorisation(drone, null, false);
@@ -2902,6 +2902,7 @@ public abstract class FileDirectoryInfoImpl extends HtmlElement implements FileD
         }
         catch (NoSuchElementException nse)
         {
+            throw new PageOperationException("Not able to find Locate file", nse);
         }
         catch (TimeoutException exception)
         {
@@ -3286,5 +3287,26 @@ public abstract class FileDirectoryInfoImpl extends HtmlElement implements FileD
         {
             throw new PageOperationException("Model Description Can not be found", e);
         }
+    }
+
+    /**
+     * Method to select Copy To... button for folder on cloud
+     */
+    public CopyOrMoveContentPage selectCopyToOnFolderCloud()
+    {
+        try
+        {
+            WebElement copyToLink = findAndWait(By.cssSelector("div.document-copy-to>a"));
+            copyToLink.click();
+            return new CopyOrMoveContentPage(drone);
+        }
+        catch (NoSuchElementException nse)
+        {
+        }
+        catch (TimeoutException exception)
+        {
+            logger.error("Copy to link is not displayed for selected data row", exception);
+        }      
+        throw new PageOperationException("Copy to link is not displayed for selected data row");
     }
 }

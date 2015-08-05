@@ -87,7 +87,7 @@ public abstract class WorkFlowPage extends SharePage implements WorkFlow
     {
         if (StringUtils.isEmpty(messageString))
         {
-            throw new IllegalArgumentException("Message cannot be Empty or null");
+            //throw new IllegalArgumentException("Message cannot be Empty or null");
         }
         WebElement workFlowDescription = getMessageTextareaElement();// drone.findAndWait(MESSAGE_TEXT);
         workFlowDescription.sendKeys(messageString);
@@ -227,7 +227,7 @@ public abstract class WorkFlowPage extends SharePage implements WorkFlow
     {
         try
         {
-            return drone.findAndWait(NO_ITEM_SELECTED_MESSAGE).isDisplayed() && drone.findAndWait(NO_ITEM_SELECTED_MESSAGE).getText().equals("No items selected");
+            return drone.find(NO_ITEM_SELECTED_MESSAGE).isDisplayed() && drone.findAndWait(NO_ITEM_SELECTED_MESSAGE).getText().equals("No items selected");
         }
         catch (NoSuchElementException nse)
         {
@@ -643,7 +643,7 @@ public abstract class WorkFlowPage extends SharePage implements WorkFlow
     {
         try
         {
-            return (drone.find(REMOVE_ALL_BUTTON).isDisplayed());
+            return drone.find(REMOVE_ALL_BUTTON).isDisplayed();
         }
         catch (NoSuchElementException nse)
         {
@@ -658,7 +658,7 @@ public abstract class WorkFlowPage extends SharePage implements WorkFlow
     {
         try
         {
-        drone.findAndWait(SUBMIT_BUTTON).click();
+            drone.findAndWait(SUBMIT_BUTTON).click();
         }
         catch (NoSuchElementException nse)
         {

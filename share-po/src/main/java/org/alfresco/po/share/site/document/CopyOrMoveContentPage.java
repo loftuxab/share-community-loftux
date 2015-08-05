@@ -83,7 +83,6 @@ public class CopyOrMoveContentPage extends ShareDialogue
 
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CopyOrMoveContentPage render(RenderTime timer)
     {
@@ -91,14 +90,12 @@ public class CopyOrMoveContentPage extends ShareDialogue
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CopyOrMoveContentPage render(long time)
     {
         return render(new RenderTime(time));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CopyOrMoveContentPage render()
     {
@@ -262,15 +259,23 @@ public class CopyOrMoveContentPage extends ShareDialogue
         try
         {
             drone.findAndWait(copyMoveOkButtonCss).click();
-            drone.waitForElement(By.cssSelector("div.bd>span.message"), SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
-            drone.waitUntilElementDeletedFromDom(By.cssSelector("div.bd>span.message"), SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
-            return FactorySharePage.resolvePage(drone);
         }
         catch (TimeoutException e)
         {
             logger.error("Unable to find the Copy/Move Button Css : ", e);
-            throw new PageException("Unable to find the Copy/Move button on Copy/Move Dialog.");
+            throw new PageException("Unable to find the Copy/Move button on Copy/Move Dialog.",e);
         }
+        try
+        {
+            drone.waitForElement(By.cssSelector("div.bd>span.message"), SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+            drone.waitUntilElementDisappears(By.cssSelector("div.bd>span.message"), SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+            drone.waitUntilElementDeletedFromDom(By.cssSelector("div.bd>span.message"), SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+        }
+        catch (NoSuchElementException | TimeoutException e)
+        {
+            //ignore exception as this is only used to verify the message dialog disappears. 
+        }
+        return FactorySharePage.resolvePage(drone);
     }
 
     /**
@@ -312,7 +317,7 @@ public class CopyOrMoveContentPage extends ShareDialogue
      * This method finds and selects the given destination name from the
      * displayed list of destinations.
      *
-     * @param destination
+     * @param destinationName String
      * @return CopyOrMoveContentPage
      */
     public CopyOrMoveContentPage selectDestination(String destinationName)
@@ -364,7 +369,7 @@ public class CopyOrMoveContentPage extends ShareDialogue
      * This method finds and selects the given site name from the
      * displayed list of sites.
      *
-     * @param site
+     * @param siteName String
      * @return CopyOrMoveContentPage
      */
     public CopyOrMoveContentPage selectSite(String siteName)

@@ -33,6 +33,7 @@ import org.alfresco.po.share.util.SiteUtil;
 import org.alfresco.po.share.workflow.StartWorkFlowPage;
 import org.alfresco.test.FailedTestListener;
 import org.alfresco.webdrone.exception.PageException;
+import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
@@ -191,6 +192,24 @@ public class DocumentLibraryPageTest extends AbstractDocumentTest
     }
 
     @Test(dependsOnMethods = "uploadFile", groups = "alfresco-one")
+    public void testBrowseToEntry() throws Exception
+    {
+        documentLibPage = documentLibPage.browseToEntry(folderName).render();
+        Assert.assertEquals(documentLibPage.getNavigation().getFoldersInNavBar().get(1).getLink().getText(), folderName);
+
+        File tempFile = SiteUtil.prepareFile();
+        UploadFilePage uploadForm = documentLibPage.getNavigation().selectFileUpload().render();
+        documentLibPage = uploadForm.uploadFile(tempFile.getCanonicalPath()).render();
+        DocumentDetailsPage detailsPage = documentLibPage.browseToEntry(tempFile.getName()).render();
+        Assert.assertTrue(detailsPage.isDocumentDetailsPage());
+
+        documentLibPage = detailsPage.delete().render();
+        documentLibPage = documentLibPage.getSiteNav().selectSiteDocumentLibrary().render();
+
+
+    }
+
+    @Test(dependsOnMethods = "uploadFile", groups="alfresco-one")
     public void editProperites()
     {
         FileDirectoryInfo fileInfo = documentLibPage.getFiles().get(1);
@@ -852,6 +871,14 @@ public class DocumentLibraryPageTest extends AbstractDocumentTest
         documentLibPage.getFileDirectoryInfo("copyFolder").selectCheckbox();
         assertTrue(documentLibPage.getNavigation().isSelectedItemsOptionPresent(SelectedItemsOptions.DELETE));
 
+    }
+    
+    @Test(groups = "alfresco-one")
+    public void testSelectDocumentLibrary() throws Exception
+    {
+        SitePage site = drone.getCurrentPage().render();
+        DocumentLibraryPage docPage = site.getSiteNav().selectSiteDocumentLibrary().render();
+        assertNotNull(docPage.selectDocumentLibrary(drone).render());        
     }
 
 }

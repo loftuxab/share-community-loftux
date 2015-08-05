@@ -257,7 +257,7 @@ public class MyTasksPage extends SharePage
             {
             taskRow.click();
             WebElement lastTD = taskRow.findElement(By.cssSelector("td:last-of-type"));
-            getDrone().mouseOverOnElement(lastTD);
+            getDrone().mouseOver(lastTD);
             lastTD.findElement(action).click();
             }
             catch (StaleElementReferenceException ex)
@@ -358,7 +358,7 @@ public class MyTasksPage extends SharePage
 
                 taskDetails.setTaskLabels(labels);
 
-                drone.mouseOverOnElement(taskRow);
+                drone.mouseOver(taskRow);
                 if (taskRow.findElements(By.xpath(".//div[contains(@class, 'task-edit')]/a/span")).size() != 0)
                 {
                     taskDetails.setEditTaskDisplayed(taskRow.findElement(By.xpath(".//div[contains(@class, 'task-edit')]/a/span")).isDisplayed());
@@ -640,6 +640,27 @@ public class MyTasksPage extends SharePage
             }
         }
 
+        return false;
+    }
+
+    public boolean isTaskNameUnique(String taskName)
+    {
+        List<WebElement> taskRows = drone.findAll(TASKS_ROWS);
+        int count=0;
+        if (null != taskRows && taskRows.size() > 0)
+        {
+            for (WebElement taskRow : taskRows)
+            {
+                if (StringUtils.deleteWhitespace(taskName).equals(StringUtils.deleteWhitespace(taskRow.findElement(By.cssSelector("h3 a")).getText())))
+                {
+                    count++;
+                }
+            }
+        }
+        if(count == 1)
+        {
+            return true;
+        }
         return false;
     }
 }

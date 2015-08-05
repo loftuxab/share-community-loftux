@@ -232,7 +232,7 @@ public class LinksPage extends SharePage
         try
         {
             row = drone.findAndWait(By.xpath(String.format("//a[text()='%s']/../../../..", title)), WAIT_TIME_3000);
-            drone.mouseOverOnElement(row);
+            drone.mouseOver(row);
         }
         catch (NoSuchElementException e)
         {
@@ -257,7 +257,7 @@ public class LinksPage extends SharePage
      */
     public LinksDetailsPage editLink(String linkTitle, String linkNewTitle, String url, String desc, boolean internalChkBox)
     {
-        AddLinkForm addLinkForm = getLinkDirectoryInfo(linkTitle).clickEdit();
+        AddLinkForm addLinkForm = getLinkDirectoryInfo(linkTitle).clickEdit().render();
         addLinkForm.setTitleField(linkNewTitle);
         addLinkForm.setDescriptionField(desc);
         addLinkForm.setUrlField(url);

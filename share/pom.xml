@@ -17,7 +17,7 @@
         <maven.tomcat.httpsPort>${tomcat.default.share.ssl.port}</maven.tomcat.httpsPort>
         <!-- Files to exclude from SonarQube analysis -->
         <sonar.exclusions>
-            src/main/webapp/jquery/**, 
+            src/main/webapp/jquery/**,
             src/main/webapp/js/flash/extMouseWheel.js,
             src/main/webapp/js/lightbox.js,
             src/main/webapp/yui/**
@@ -33,7 +33,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>alfresco-jlan-embed</artifactId>
+            <artifactId>alfresco-core</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -55,6 +55,17 @@
                 <exclusion>
                     <groupId>org.quartz-scheduler</groupId>
                     <artifactId>quartz</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>alfresco-jlan-embed</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>aopalliance</groupId>
+                    <artifactId>aopalliance</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -209,7 +220,7 @@
         <dependency>
             <groupId>org.alfresco</groupId>
             <artifactId>aikau</artifactId>
-            <version>1.0.8.1</version>
+            <version>1.0.19</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.extensions.surf</groupId>
@@ -240,9 +251,9 @@
              the Theme XML files and in widget CSS files. We deliberately exclude it's preferred
              Rhino version so as to avoid conflicts with our own dependencies. -->
         <dependency>
-            <groupId>com.asual.lesscss</groupId>
+            <groupId>org.alfresco.3rdparty.com.asual.lesscss</groupId>
             <artifactId>lesscss-engine</artifactId>
-            <version>1.5.0</version>
+            <version>1.5.0-patched</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.mozilla</groupId>
@@ -250,7 +261,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
     </dependencies>
 
     <build>
@@ -286,7 +297,6 @@
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
-                    <warSourceDirectory>src/main/webapp</warSourceDirectory>
                     <overlays>
                         <overlay>
                             <groupId>${project.groupId}</groupId>
@@ -310,7 +320,7 @@
                         <goals>
                             <goal>exploded</goal>
                         </goals>
-                        <phase>prepare-package</phase>
+                        <phase>generate-resources</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -427,7 +437,7 @@
                     </aggregations>
                 </configuration>
             </plugin>
-            
+
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
@@ -456,7 +466,7 @@
                         </includes>
                     </scanTargetPattern>
                  </scanTargetPatterns> -->
-                  
+
                   <!-- Sets the port when using mvn jetty:run-forked -->
                   <jvmArgs>-Djetty.port=8089</jvmArgs>
                   <!-- Override the system properties to set a port that *should* be unused -->
@@ -481,13 +491,21 @@
                         <resourceBase>tests/testApp</resourceBase>
                         <resourceBase>${project.build.directory}/${project.build.finalName}</resourceBase>
                      </resourceBases>
-                     <allowDuplicateFragmentNames>true</allowDuplicateFragmentNames> 
+                     <allowDuplicateFragmentNames>true</allowDuplicateFragmentNames>
                    </webApp>
                    <webAppSourceDirectory>tests/testApp</webAppSourceDirectory>
                    <classesDirectory>tests/testApp/WEB-INF/classes</classesDirectory>
                    <baseAppFirst>false</baseAppFirst>
                 </configuration>
-         </plugin>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <configuration>
+                    <useSeparateTomcatClassLoader>true</useSeparateTomcatClassLoader>
+                    <contextFile>${basedir}/tomcat/share-context.xml</contextFile>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -499,13 +517,12 @@
                     <plugin>
                         <groupId>org.apache.tomcat.maven</groupId>
                         <artifactId>tomcat7-maven-plugin</artifactId>
-                        <version>2.1</version>
                         <executions>
                             <execution>
                                 <id>run-exploded-webapp</id>
                                 <phase>prepare-package</phase>
                                 <goals>
-                                    <goal>run-war-only</goal>
+                                    <goal>run</goal>
                                 </goals>
                             </execution>
                         </executions>

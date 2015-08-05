@@ -186,7 +186,27 @@ public abstract class DetailsPage extends SitePage
      */
     public HtmlPage selectLike()
     {
-        drone.findAndWait(By.cssSelector("a[class^='like-action']")).click();
+        drone.findAndWait(By.cssSelector("a[class^=\"like-action\"][title=\"Like this document\"]")).click();
+        drone.waitForPageLoad(SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+        return FactorySharePage.resolvePage(drone);
+    }
+
+    /**
+     * Mimics the action of selecting the thumbs up icon on the details folder.
+     */
+    public HtmlPage selectLikeFolder()
+    {
+        drone.findAndWait(By.cssSelector("a[class^=\"like-action\"][title=\"Like this folder\"]")).click();
+        drone.waitForPageLoad(SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
+        return FactorySharePage.resolvePage(drone);
+    }
+
+    /**
+     * Mimics the action of selecting the thumbs up icon on the details page.
+     */
+    public HtmlPage selectUnlike()
+    {
+        drone.findAndWait(By.cssSelector("a[class^=\"like-action\"][title=\"Unlike\"]")).click();
         drone.waitForPageLoad(SECONDS.convert(maxPageLoadingTime, MILLISECONDS));
         return FactorySharePage.resolvePage(drone);
     }
@@ -1063,7 +1083,7 @@ public abstract class DetailsPage extends SitePage
         try
         {
             WebElement editCommentLink = drone.findAndWait(By.xpath(String.format("//div[@class='comment-content']/p[text()='%s']/../..", comment)));
-            drone.mouseOverOnElement(editCommentLink);
+            drone.mouseOver(editCommentLink);
             editCommentLink.findElement(By.cssSelector("span.comment-actions a")).click();
             String setCommentJs = String.format("tinyMCE.activeEditor.setContent('%s');", newComment);
             drone.executeJavaScript(setCommentJs);
@@ -1811,12 +1831,38 @@ public abstract class DetailsPage extends SitePage
         ChangeTypePage changeTypePage = new ChangeTypePage(drone).render();
         if (!changeTypePage.getTypes().contains(typeValue))
         {
-            throw new ShareException(typeValue + "isn't present in the list");
+            throw new ShareException(typeValue + " isn't present in the list");
         }
         changeTypePage.selectChangeType(typeValue);
         changeTypePage.selectSave();
         waitUntilAlert();
         return drone.getCurrentPage().render();
+    }
+    
+    /**
+     * Util to true if the specified type is available in the drop down list
+     * @param typeValue
+     * @return true if the type is available, otherwise false
+     */
+    public boolean isTypeAvailable(String typeValue)
+    {
+        try
+        {
+            selectChangeType();
+            ChangeTypePage changeTypePage = new ChangeTypePage(drone).render();
+            if (changeTypePage.getTypes().contains(typeValue))
+            {
+                return true;
+            }
+        }
+        catch (ShareException e)
+        {
+            if (logger.isTraceEnabled())
+            {
+                logger.trace("Change Type dropdown is not displayed ", e);
+            }
+        }
+        return false;
     }
 
     /**

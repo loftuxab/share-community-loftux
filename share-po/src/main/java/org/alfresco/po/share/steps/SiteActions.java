@@ -20,11 +20,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.alfresco.po.share.DashBoardPage;
 import org.alfresco.po.share.SharePage;
 import org.alfresco.po.share.exception.ShareException;
+import org.alfresco.po.share.exception.UnexpectedSharePageException;
 import org.alfresco.po.share.site.CreateSitePage;
 import org.alfresco.po.share.site.NewFolderPage;
 import org.alfresco.po.share.site.SiteDashboardPage;
@@ -36,11 +38,13 @@ import org.alfresco.po.share.site.document.ContentDetails;
 import org.alfresco.po.share.site.document.ContentType;
 import org.alfresco.po.share.site.document.CopyOrMoveContentPage;
 import org.alfresco.po.share.site.document.CreatePlainTextContentPage;
+import org.alfresco.po.share.site.document.DetailsPage;
 import org.alfresco.po.share.site.document.DocumentDetailsPage;
 import org.alfresco.po.share.site.document.DocumentLibraryPage;
 import org.alfresco.po.share.site.document.EditDocumentPropertiesPage;
 import org.alfresco.po.share.site.document.FileDirectoryInfo;
 import org.alfresco.po.share.site.document.ConfirmDeletePage.Action;
+import org.alfresco.po.share.site.document.SelectAspectsPage;
 import org.alfresco.webdrone.HtmlPage;
 import org.alfresco.webdrone.WebDrone;
 import org.alfresco.webdrone.exception.PageException;
@@ -53,6 +57,7 @@ import org.openqa.selenium.NoSuchElementException;
  * Share actions - All the common steps of site action
  * 
  * @author sprasanna
+ * @author mbhave
  */
 
 public class SiteActions extends CommonActions
@@ -169,9 +174,9 @@ public class SiteActions extends CommonActions
          */
 
         // Open DocumentLibrary Page from Site Page
-        SitePage site = (SitePage) getSharePage(drone);
+        SitePage site = drone.getCurrentPage().render();
 
-        DocumentLibraryPage docPage = site.getSiteNav().selectSiteDocumentLibrary().render();
+        DocumentLibraryPage docPage = site.getSiteNav().selectSiteContentLibrary().render();
         logger.info("Opened Document Library");
         return docPage;
     }
@@ -181,9 +186,9 @@ public class SiteActions extends CommonActions
      * 
      * @param drone WebDrone Instance
      * @param folderPath: String folder path relative to DocumentLibrary e.g. DOCLIB + file.seperator + folderName1
-     * @throws SkipException if error in this API
+     * @throws ShareException if error in this API
      */
-    public DocumentLibraryPage navigateToFolder(WebDrone drone, String folderPath) throws Exception
+    public DocumentLibraryPage navigateToFolder(WebDrone drone, String folderPath) throws ShareException
     {
         DocumentLibraryPage docPage;
 
@@ -252,6 +257,26 @@ public class SiteActions extends CommonActions
     public HtmlPage selectContent(WebDrone drone, String contentName)
     {
         return getFileDirectoryInfo(drone, contentName).clickOnTitle().render();
+    }
+    
+    /**
+     * Util returns the DetailsPage for the selected content
+     * 
+     * @param drone
+     * @param contentName
+     * @return DetailsPage
+     */
+    public HtmlPage viewDetails(WebDrone drone, String contentName)
+    {
+        FileDirectoryInfo node = getFileDirectoryInfo(drone, contentName);
+        if(node.isFolder())
+        {
+            return node.selectViewFolderDetails().render();
+        }
+        else
+        {
+            return node.clickOnTitle().render();
+        }
     }
 
     /**
@@ -339,7 +364,6 @@ public class SiteActions extends CommonActions
      * 
      * @param file File Object for the file in reference
      * @return DocumentLibraryPage
-     * @throws SkipException if error in this API
      */
     public HtmlPage uploadFile(WebDrone drone, File file)
     {
@@ -488,7 +512,7 @@ public class SiteActions extends CommonActions
      * 
      * @param drone
      * @param siteShortURL
-     * @return {@link SiteDashBoardPage}
+     * @return {@link org.alfresco.po.share.site.SiteDashboardPage}
      */
     public SiteDashboardPage openSiteURL(WebDrone drone, String siteShortURL)
     {
@@ -595,7 +619,7 @@ public class SiteActions extends CommonActions
      */
     private DocumentLibraryPage selectContentCheckBox(WebDrone drone, String contentName)
     {
-        DocumentLibraryPage docLibPage = ((DocumentLibraryPage) getSharePage(drone)).render();
+        DocumentLibraryPage docLibPage = drone.getCurrentPage().render();
         if (!docLibPage.getFileDirectoryInfo(contentName).isCheckboxSelected())
         {
             docLibPage.getFileDirectoryInfo(contentName).selectCheckbox();
@@ -676,9 +700,9 @@ public class SiteActions extends CommonActions
      * @param fileName
      * @return
      */
-    public HtmlPage copyOrMoveArtifact(WebDrone drone, String destination, String siteName, String moveFolderName, String fileName, String type)
+    public HtmlPage copyOrMoveArtifact(WebDrone drone, String destination, String siteName,  String fileName, String type, String... moveFolderName)
     {
-        DocumentLibraryPage docPage = (DocumentLibraryPage) getSharePage(drone);
+        DocumentLibraryPage docPage =drone.getCurrentPage().render();
         CopyOrMoveContentPage copyOrMoveToPage;
 
         if (type.equals("Copy"))
@@ -741,7 +765,7 @@ public class SiteActions extends CommonActions
      */
     public DocumentLibraryPage editProperties(WebDrone drone, String contentName, String newContentName, String title, String description)
     {
-        DocumentLibraryPage documentLibraryPage = ((DocumentLibraryPage) getSharePage(drone)).render();
+        DocumentLibraryPage documentLibraryPage = drone.getCurrentPage().render();
         EditDocumentPropertiesPage editProp = documentLibraryPage.getFileDirectoryInfo(contentName).selectEditProperties().render();
         // Check the newContent is present
         if (newContentName != null)
@@ -762,4 +786,95 @@ public class SiteActions extends CommonActions
         return editProp.selectSave().render();
     }
     
+    /**
+     * Util to change the type of the selected folder / content to the specified type 
+     * Expects Document / Folder Details Page is already open
+     */
+    public DetailsPage changeType(WebDrone driver, String typeToBeSelected)
+    {
+        try
+        {
+            DetailsPage detailsPage = getSharePage(driver).render();
+            return detailsPage.changeType(typeToBeSelected).render();       
+        }
+        catch(Exception e)
+        {
+            throw new PageException("Error During Change Type", e);
+        }
+    }
+    
+    /**
+     * Util to change the type of the selected folder / content to the specified type 
+     * Expects Document / Folder Details Page is already open
+     */
+    public boolean isType(WebDrone driver, String typeToBeSelected)
+    {
+            DetailsPage detailsPage = getSharePage(driver).render();
+            return detailsPage.isTypeAvailable(typeToBeSelected);
+    }
+    
+    /**
+     * Util to add the list of aspects to the selected document / folder
+     * @param driver
+     * @param aspectsToBeAdded
+     * @return DetailsPage
+     */
+    public DetailsPage addAspects(WebDrone driver, List<String> aspectsToBeAdded)
+    {
+        try
+        {           
+            SelectAspectsPage aspectsPage = getAspectsPage(driver);
+            
+            aspectsPage = aspectsPage.addDynamicAspects(aspectsToBeAdded).render(); 
+            return aspectsPage.clickApplyChanges().render();
+        }
+        catch(PageException e)
+        {
+            throw new PageException("Error During Adding Aspect", e);
+        }
+    }
+    
+    /**
+     * Util to remove the list of aspects from the selected document / folder
+     * @param driver
+     * @param aspectsToBeRemoved
+     * @return DetailsPage
+     */
+    public DetailsPage removeAspects(WebDrone driver, List<String> aspectsToBeRemoved)
+    {
+        try
+        {           
+            SelectAspectsPage aspectsPage = getAspectsPage(driver);
+            
+            aspectsPage = aspectsPage.removeDynamicAspects(aspectsToBeRemoved).render(); 
+            return aspectsPage.clickApplyChanges().render();
+        }
+        catch(PageException e)
+        {
+            throw new PageException("Error During Removing Aspect", e);
+        }
+    }
+    
+    /**
+     * Util to return ManageAspectsPopup from DetailsPage
+     * @param driver
+     * @return SelectAspectsPage
+     */
+    public SelectAspectsPage getAspectsPage(WebDrone driver)
+    {
+        try
+        {
+            DetailsPage detailsPage = getSharePage(driver).render();
+            
+            return detailsPage.selectManageAspects().render();     
+        }
+        catch(ClassCastException ce)
+        {
+            throw new UnexpectedSharePageException(DetailsPage.class, ce);
+        }
+        catch(PageException pe)
+        {
+            throw new PageException("Unable to select Manage Aspects", pe);
+        }
+    }
 }

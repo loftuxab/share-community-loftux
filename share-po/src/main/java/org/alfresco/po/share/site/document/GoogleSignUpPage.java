@@ -47,6 +47,10 @@ public class GoogleSignUpPage extends SharePage
     private static final By GOOGLE_PASSWORD = By.xpath("//input[@name='Passwd']");
     private static final By SIGNUP_BUTTON = By.xpath("//input[@type='submit']");
     private static final String googleAccountTitle = "Google Accounts";
+    private static final By MSG_SELECTOR = By.xpath("//div[contains(@class, 'bd')]/span[text()='We hit a problem opening the file in Google Docs™. Please try " +
+        "again. If this happens again then please contact your Alfresco Administrator.' or text()='There was an error opening the document in Google Docs™. " +
+        "If the errors occurs again please contact your System Administrator.']");
+
 
     private boolean isGoogleCreate;
     private String documentVersion;
@@ -90,7 +94,7 @@ public class GoogleSignUpPage extends SharePage
     {
         switchToGoogleSignIn();
         elementRender(timer, getVisibleRenderElement(GOOGLE_USERNAME), getVisibleRenderElement(GOOGLE_PASSWORD),
-                getVisibleRenderElement(SIGNUP_BUTTON));
+            getVisibleRenderElement(SIGNUP_BUTTON));
         return this;
     }
 
@@ -141,9 +145,8 @@ public class GoogleSignUpPage extends SharePage
             waitUntilAlert(10);
             try
             {
-                WebElement message = drone.findAndWait(By.cssSelector("div.bd>span.message"));
-                if(message.isDisplayed() && message.getText().equals("There was an error opening the document in Google Docs™." +
-                    " If the errors occurs again please contact your System Administrator."))
+                WebElement theError = drone.findAndWait(MSG_SELECTOR, 10000);
+                if (theError.isDisplayed())
                 {
                     throw new PageOperationException("Unable to open Google Doc for Editing");
                 }
@@ -153,7 +156,7 @@ public class GoogleSignUpPage extends SharePage
                 return new EditInGoogleDocsPage(drone, documentVersion, isGoogleCreate);
             }
         }
-        catch (TimeoutException te)
+        catch (TimeoutException | NoSuchElementException te)
         {
             throw new TimeoutException("Google Sign up page timeout", te);
         }

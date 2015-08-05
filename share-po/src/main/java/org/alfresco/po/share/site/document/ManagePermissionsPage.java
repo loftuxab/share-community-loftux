@@ -28,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementNotVisibleException;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
@@ -69,6 +70,7 @@ public class ManagePermissionsPage extends SharePage
     private final By areYouSureButtonGroup = By.cssSelector("span.button-group span span button");
     private final By userPermissionDeleteAction = By.cssSelector("a[class$='action-link']");
     private final String userRowLocator = "//div[contains(@id, 'default-directPermissions')]//td/div[contains(text(),'%s')]/../..";
+    private int retryCount = 0;
 
     public enum ButtonType
     {
@@ -76,10 +78,9 @@ public class ManagePermissionsPage extends SharePage
     }
 
     /**
-     * Default constructor is not provided as the client should pass the {@link FromClass} while creating ManagePermissionsPage.
+     * Default constructor is not provided as the client should pass the while creating ManagePermissionsPage.
      *
-     * @param drone
-     * @param fromClass
+     * @param drone WebDrone
      */
     public ManagePermissionsPage(WebDrone drone)
     {
@@ -479,7 +480,7 @@ public class ManagePermissionsPage extends SharePage
                 {
                     if (role.getRoleName().equalsIgnoreCase(webElement.findElement(userRoleLocator).findElement(accessTypeButton).getText()))
                     {
-                        drone.mouseOverOnElement(webElement.findElement(By.xpath("//td[contains(@class, 'yui-dt-col-actions')]/div")));
+                        drone.mouseOver(webElement.findElement(By.xpath("//td[contains(@class, 'yui-dt-col-actions')]/div")));
                         WebElement deleteDivElement = webElement.findElement(deleteAction);
                         drone.find(By.id(deleteDivElement.getAttribute("id"))).findElement(By.cssSelector("a")).click();
                         selectSave();
@@ -519,9 +520,6 @@ public class ManagePermissionsPage extends SharePage
         throw new PageOperationException("Role doesnt exist!!");
     }
 
-    /**
-     * @param userRole
-     */
     private List<String> getUserRoles()
     {
         List<String> userRoleStrings = new ArrayList<String>();
@@ -546,7 +544,6 @@ public class ManagePermissionsPage extends SharePage
      * Get available roles for existing users.
      *
      * @param userName
-     * @param userRole
      * @return
      */
     public List<String> getListOfUserRoles(String userName)
@@ -582,8 +579,6 @@ public class ManagePermissionsPage extends SharePage
 
     /**
      * From the drop down, get the access level selected.
-     *
-     * @param accessType
      */
     public UserRole getAccessType()
     {
@@ -1042,7 +1037,7 @@ public class ManagePermissionsPage extends SharePage
                     String currentRole = StringUtils.replace(webElement.findElement(userRoleLocator).getText().toUpperCase(), " ", "");
                     if (role.equals(UserRole.valueOf(currentRole)))
                     {
-                        drone.mouseOverOnElement(webElement);
+                        drone.mouseOver(webElement);
                         return webElement.findElement(userPermissionDeleteAction);
                     }
                 }
@@ -1082,12 +1077,22 @@ public class ManagePermissionsPage extends SharePage
      */
     public ManagePermissionsPage deleteUserWithPermission(String name, UserRole role)
     {
-
-        WebElement element = getDeleteAction(name, role);
-        if (null != element)
+        try
         {
-            element.click();
-
+            WebElement element = getDeleteAction(name, role);
+            if (null != element)
+            {
+                element.click();
+            }
+        }
+        catch (ElementNotVisibleException e)
+        {
+            deleteUserWithPermission(name, role);
+            retryCount++;
+            if (retryCount == 3)
+            {
+                throw new PageOperationException("Not able to locate delete button", e);
+            }
         }
         return drone.getCurrentPage().render();
     }

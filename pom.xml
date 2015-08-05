@@ -13,6 +13,13 @@
         <module>share-services</module>
         <module>share</module>
         <module>share-po</module>
+        <module>surf</module>
+        <module>web-framework-commons</module>
+        <module>web-editor</module>
+        <module>web-editor-plugin</module>
+        <module>web-editor-samples/customer-site</module>
+        <module>wcmquickstart-module</module>
+        <module>alfresco</module>
     </modules>
 
     <properties>
@@ -22,9 +29,38 @@
     </properties>
 
    <scm>
-     <connection>scm:svn:https://svn.alfresco.com/repos/alfresco-open-mirror/web-apps/Share/trunk/</connection>
-     <developerConnection>scm:svn:https://svn.alfresco.com/repos/alfresco-enterprise/web-apps/Share/trunk/</developerConnection>
+       <connection>scm:svn:https://svn.alfresco.com/repos/alfresco-open-mirror/web-apps/Share/trunk/</connection>
+       <developerConnection>scm:svn:https://svn.alfresco.com/repos/alfresco-enterprise/web-apps/Share/trunk/</developerConnection>
    </scm>
+    <repositories>
+        <repository>
+            <id>alfresco-public</id>
+                <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>alfresco-public-snapshots</id>
+            <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <!-- Only used for the customised version of yuicompressor in yuicompressor-maven-plugin -->
+            <id>alfresco-public</id>
+            <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <build>
         <!-- Resets Maven default -->
@@ -39,7 +75,16 @@
             <testResource>
                  <directory>src/test/resources</directory>
             </testResource>
-        </testResources> 
-    </build>
+        </testResources>
 
+        <plugins>
+            <plugin>
+                <!-- Resets Maven default -->
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <warSourceDirectory>src/main/webapp</warSourceDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

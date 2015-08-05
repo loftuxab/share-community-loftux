@@ -251,21 +251,15 @@ public class DetailsPageTest extends AbstractTest
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MOVE_TO), "Move to is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.DELETE_CONTENT), "Delete to is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MANAGE_ASPECTS), "Manager Aspect not present");
-        Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MANAGE_PERMISSION_FOL), "Manage Permission not present");       
+        Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MANAGE_PERMISSION_FOL), "Manage Permission not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.CHNAGE_TYPE), "Change Type is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.EDIT_PROPERTIES), "Edit properties to is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MANAGE_RULES), "Manage Rules is not present");
-        Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.DOWNLOAD_FOLDER), "Download Folder is not present");        
+        Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.DOWNLOAD_FOLDER), "Download Folder is not present");
 
     }    
-    
-    @Test(dependsOnMethods="isDocumentActionPresent", groups = { "Enterprise4.2" })
-    public void isPermissionsPanelPresent() throws Exception
-    {
-        Assert.assertTrue(folderDetails.isPermissionsPanelPresent());
-    }  
-    
-    @Test(dependsOnMethods="isPermissionsPanelPresent", groups = { "Hybrid" })
+
+    @Test(dependsOnMethods="isDocumentActionPresent", groups = { "Hybrid" })
     public void isSynPanelPresent() throws Exception
     {
         SitePage page = drone.getCurrentPage().render();

@@ -7,6 +7,7 @@ import org.alfresco.webdrone.WebDrone;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 
 /**
@@ -28,8 +29,6 @@ public class InformationEventForm extends AbstractEventForm
     private final static By START_DATE_TIME = By.cssSelector("div[id$='_defaultContainer-startdate']");
     @RenderWebElement
     private final static By END_DATE_TIME = By.cssSelector("div[id$='_defaultContainer-enddate']");
-
-    private final static By RECURRENCE_LABEL = By.xpath("//div[contains(text(),'Recurrence:')]");
     private final static By RECURRENCE_DETAIL = By.xpath("//div[contains(text(),'Recurrence:')]/following-sibling::div");
 
     public InformationEventForm(WebDrone drone)
@@ -63,7 +62,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method for click on 'Edit' on information event form
-     * 
+     *
      * @return
      */
     public EditEventForm clickOnEditEvent()
@@ -79,7 +78,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method for click on 'Delete' on information event form
-     * 
+     *
      * @return
      */
     public DeleteEventForm clickOnDeleteEvent()
@@ -95,19 +94,18 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to verify whether Edit button is present
-     * 
+     *
      * @return boolean
      */
     public boolean isEditButtonPresent()
     {
-        boolean isPresent;
-        isPresent = drone.isElementDisplayed(EDIT_BUTTON);
-        return isPresent;
+        return drone.isElementDisplayed(EDIT_BUTTON);
+
     }
 
     /**
      * Method to verify whether Delete button is present
-     * 
+     *
      * @return boolean
      */
     public boolean isDeleteButtonPresent()
@@ -119,7 +117,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to retrieve tag added to Calendar Event
-     * 
+     *
      * @return String
      */
     public String getTagName()
@@ -140,7 +138,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to retrieve what Detail added to Calendar Event
-     * 
+     *
      * @return String
      */
     public String getWhatDetail()
@@ -161,7 +159,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to retrieve where Detail added to Calendar Event
-     * 
+     *
      * @return String
      */
     public String getWhereDetail()
@@ -182,7 +180,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to retrieve description Detail added to Calendar Event
-     * 
+     *
      * @return String
      */
     public String getDescriptionDetail()
@@ -190,10 +188,7 @@ public class InformationEventForm extends AbstractEventForm
         try
         {
             String whatDetail = drone.findAndWait(DESCRIPTION_DETAIL).getText();
-            // if (!whatDetail.isEmpty())
             return whatDetail;
-            // else
-            // throw new IllegalArgumentException("Cannot find description Detail");
         }
         catch (TimeoutException te)
         {
@@ -203,7 +198,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method for close information event form
-     * 
+     *
      * @return
      */
     public CalendarPage closeInformationForm()
@@ -219,7 +214,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to retrieve Start Date Time of event
-     * 
+     *
      * @return String
      * @author Bogdan.Bocancea
      */
@@ -241,7 +236,7 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to retrieve End Date Time of event
-     * 
+     *
      * @return String
      * @author Bogdan.Bocancea
      */
@@ -263,43 +258,58 @@ public class InformationEventForm extends AbstractEventForm
 
     /**
      * Method to verify whether Delete button is enabled
-     * 
+     *
      * @return boolean
      */
     public boolean isDeleteButtonEnabled()
     {
-        boolean isPresent;
-        isPresent = drone.findAndWait(DELETE_BUTTON).isEnabled();
-        return isPresent;
+        try
+        {
+            return drone.find(DELETE_BUTTON).isEnabled();
+        }
+        catch (NoSuchElementException te)
+        {
+            return false;
+        }
     }
 
     /**
      * Method to verify whether Delete button is enabled
-     * 
+     *
      * @return boolean
      */
     public boolean isOkButtonEnabled()
     {
-        boolean isPresent;
-        isPresent = drone.findAndWait(OK_BUTTON).isEnabled();
-        return isPresent;
+        try
+        {
+            return drone.find(OK_BUTTON).isEnabled();
+        }
+        catch (NoSuchElementException te)
+        {
+            return false;
+        }
     }
 
     /**
      * Method to verify whether Recurrence is present
-     * 
+     *
      * @return boolean
      */
     public boolean isRecurrencePresent()
     {
-        boolean isPresent;
-        isPresent = drone.isElementDisplayed(RECURRENCE_LABEL);
-        return isPresent;
+        try
+        {
+            return drone.find(RECURRENCE_DETAIL).isEnabled();
+        }
+        catch (NoSuchElementException te)
+        {
+            return false;
+        }
     }
 
     /**
      * Method to retrieve description Detail added to Calendar Event
-     * 
+     *
      * @return String
      */
     public String getRecurrenceDetail()

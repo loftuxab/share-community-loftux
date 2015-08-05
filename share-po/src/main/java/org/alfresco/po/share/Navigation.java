@@ -341,9 +341,7 @@ public class Navigation extends SharePage
      */
     public RepositoryPage selectRepository()
     {
-        ShareUtil.validateAlfrescoVersion(alfrescoVersion, RequiredAlfrescoVersion.ENTERPRISE_ONLY);
-        String selector = isDojoSupport() ? "div#HEADER_REPOSITORY" : "a[id$='app_repository-button']";
-        drone.find(By.cssSelector(selector)).click();
+        drone.find(By.cssSelector("#HEADER_REPOSITORY")).click();
         return new RepositoryPage(drone);
     }
 
@@ -1039,7 +1037,7 @@ public class Navigation extends SharePage
             String url = currentUrl.replaceFirst("^*/page.*", usersPageURL);
             drone.navigateTo(url);
         }
-        return new AdminConsolePage(drone).render();
+        return drone.getCurrentPage().render();
     }
 
     /**

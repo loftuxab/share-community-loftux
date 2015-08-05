@@ -24,7 +24,12 @@ import org.alfresco.webdrone.exception.PageException;
 import org.alfresco.webdrone.exception.PageOperationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openqa.selenium.*;
+import org.apache.http.client.utils.URIBuilder;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebElement;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,7 +77,7 @@ public class DocumentLibraryPage extends SitePage
     private static String CATEGORY_ROOT_SPACER = "//span[text()='Category Root']/ancestor-or-self::table[contains(@class, 'depth0')]";
     private static By CATEGORY_ROOT_SPACER_LINK = By.xpath(CATEGORY_ROOT_SPACER + "//a");
     private static final String CHECK_BOX = "input[id^='checkbox-yui']";
-    private static final By DOCUMENT_LIBRARY = By.cssSelector("a[href$='documentlibrary']");
+    private static final By DOCUMENT_LIBRARY = By.cssSelector("#HEADER_SITE_DOCUMENTLIBRARY_text");
     private static final By SYNC_MESSAGE = By.xpath(".//span[contains(text(),'Sync was created')]");
 
     public enum Optype
@@ -565,11 +570,24 @@ public class DocumentLibraryPage extends SitePage
      * @param title String file title
      * @return DocumentDetailsPage page response object
      */
-    public DocumentDetailsPage selectFile(final String title)
+    public HtmlPage selectFile(final String title)
     {
+        HtmlPage page;
+
         selectEntry(title).click();
         waitUntilAlert();
-        return new DocumentDetailsPage(drone);
+        page = drone.getCurrentPage();
+
+        try
+        {
+            page.render();
+            return new DocumentDetailsPage(drone);
+        }
+        catch (PageException e)
+        {
+            return new DocumentEditOfflinePage(drone);
+        }
+
     }
 
     /**
@@ -621,8 +639,10 @@ public class DocumentLibraryPage extends SitePage
                 break;
         }
 
+        long defaultWaitTime =  drone.getDefaultWaitTime();
+        if(title == null || title.isEmpty()) {throw new IllegalArgumentException("Title is required");}
         String search = String.format(xpath, title);
-        return drone.findAndWait(By.xpath(search), WAIT_TIME_3000);
+        return drone.findAndWait(By.xpath(search), defaultWaitTime);
     }
 
     /**
@@ -1593,10 +1613,10 @@ public class DocumentLibraryPage extends SitePage
      * @param drone
      * @return
      */
-    public static DocumentLibraryPage selectDocumentLibrary(WebDrone drone)
+    public DocumentLibraryPage selectDocumentLibrary(WebDrone drone)
     {
-        drone.findAndWait(DOCUMENT_LIBRARY).click();
-        return new DocumentLibraryPage(drone);
+        drone.find(DOCUMENT_LIBRARY).click();
+        return drone.getCurrentPage().render();
     }
 
 
@@ -1623,4 +1643,34 @@ public class DocumentLibraryPage extends SitePage
 
     }
 
+    /**
+     * The method helps to navigate to a folder or a file from document library.
+     * @param title
+     * @return
+     */
+    public HtmlPage browseToEntry(String title) throws Exception
+    {
+
+        DocumentLibraryPage documentLibraryPage = drone.getCurrentPage().render();
+        FileDirectoryInfo fileInfo = documentLibraryPage.getFileDirectoryInfo(title);
+
+        if (fileInfo.isFolder())
+        {
+            String url = selectEntry(title).getAttribute("href");
+            String param = selectEntry(title).getAttribute("rel");
+            param = param.substring(1, param.length());
+
+            URIBuilder b = new URIBuilder(url);
+            b.addParameter("filter", param);
+            url = b.build().toString();
+            drone.navigateTo(url);
+        }
+        else
+        {
+            String url = selectEntry(title).getAttribute("href");
+            drone.navigateTo(url);
+        }
+
+        return FactorySharePage.resolvePage(drone);
+    }
 }
