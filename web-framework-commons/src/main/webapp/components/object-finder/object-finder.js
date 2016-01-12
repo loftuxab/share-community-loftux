@@ -845,9 +845,9 @@
                }
                else
                {
-                  selectedItems.push(this.selectedItems[item].nodeRef);
-               }
+               selectedItems.push(this.selectedItems[item].nodeRef);
             }
+         }
          }
          return selectedItems;
       },
@@ -1455,14 +1455,20 @@
        */
       _loadSelectedItems: function ObjectFinder__loadSelectedItems(useOptions)
       {
-         var arrItems = "";
+         var arrItems = [], arrItemsToFetch = [];
          if (this.options.selectedValue)
          {
-            arrItems = this.options.selectedValue;
+            arrItems = this.options.selectedValue.split(",");
          }
          else
          {
-            arrItems = this.options.currentValue;
+            arrItems = this.options.currentValue.split(",");
+         }
+         //remove archived node
+         for (var i = 0, il = arrItems.length; i < il; i++){
+            if(Alfresco.util.NodeRef(arrItems[i]).storeType !== "archive"){
+               arrItemsToFetch.push(arrItems[i]);
+            }
          }
          
          // populate with previous if no value set
@@ -1498,7 +1504,7 @@
             this.selectedItems = null;
          };
 
-         if (arrItems !== "")
+         if (arrItemsToFetch.length > 0)
          {
             // Determine right URL to use
             var itemsUrl = null;
@@ -1516,7 +1522,7 @@
                method: "POST",
                dataObj:
                {
-                  items: arrItems.split(","),
+                  items: arrItemsToFetch,
                   itemValueType: this.options.valueType
                },
                successCallback:

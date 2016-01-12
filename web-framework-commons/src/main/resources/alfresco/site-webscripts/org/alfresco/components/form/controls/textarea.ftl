@@ -7,20 +7,16 @@
       <#if field.mandatory && field.value == "">
       <span class="incomplete-warning"><img src="${url.context}/res/components/form/images/warning-16.png" title="${msg("form.field.incomplete")}" /><span>
       </#if>
-      <span class="viewmode-label">${field.label?html}:</span>
-         <#assign tmpFieldValue=field.value?html?replace("\n", "<br>")>
-         <#if field.control.params.saveLineBreaks?? && field.control.params.saveLineBreaks == "false">
-            <#assign tmpFieldValue=field.value?html>
-         </#if>
+         <span class="viewmode-label">${field.label?html}: <@formLib.renderLocaleImage field=field /></span>
       <#if field.control.params.activateLinks?? && field.control.params.activateLinks == "true">
-            <#assign fieldValue=tmpFieldValue?replace("((http|ftp|https):\\/\\/[\\w\\-_]+(\\.[\\w\\-_]+)+([\\w\\-\\.,@?\\^=%&:\\/~\\+#]*[\\w\\-\\@?\\^=%&\\/~\\+#])?)", "<a href=\"$1\" target=\"_blank\">$1</a>", "r")>
+         <#assign fieldValue=field.value?html?replace("((http|ftp|https):\\/\\/[\\w\\-_]+(\\.[\\w\\-_]+)+([\\w\\-\\.,@?\\^=%&:\\/~\\+#]*[\\w\\-\\@?\\^=%&\\/~\\+#])?)", "<a href=\"$1\" target=\"_blank\">$1</a>", "r")>
       <#else>
-            <#assign fieldValue=tmpFieldValue>
+         <#assign fieldValue=field.value?html>
       </#if>
       <span class="viewmode-value"><#if fieldValue == "">${msg("form.control.novalue")}<#else>${fieldValue}</#if></span>
    </div>
    <#else>
-   <label for="${fieldHtmlId}">${field.label?html}:<#if field.mandatory><span class="mandatory-indicator">${msg("form.required.fields.marker")}</span></#if></label>
+      <label for="${fieldHtmlId}">${field.label?html}:<#if field.mandatory><span class="mandatory-indicator">${msg("form.required.fields.marker")}</span></#if> <@formLib.renderLocaleImage field=field /></label>
    <@formLib.renderFieldHelp field=field />
    <textarea id="${fieldHtmlId}" name="${field.name}" rows="${rows}" cols="${columns}" tabindex="0"
       <#if field.description??>title="${field.description}"</#if>
