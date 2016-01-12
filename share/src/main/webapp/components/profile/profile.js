@@ -100,7 +100,8 @@
             this.widgets.edit = Alfresco.util.createYUIButton(this, "button-edit", this.onEditProfile);
             this.widgets.save = Alfresco.util.createYUIButton(this, "button-save", null,
                {
-                  type: "submit"
+                  type: "submit",
+                  additionalClass:"alf-primary-button"
                });
             this.widgets.cancel = Alfresco.util.createYUIButton(this, "button-cancel", this.onCancel);
 
@@ -125,6 +126,11 @@
             form.addValidation(this.id + "-input-email", Alfresco.forms.validation.mandatory, null, "keyup");
             form.addValidation(this.id + "-input-email", Alfresco.forms.validation.email, null, "keyup");
             form.addValidation(this.id + "-input-companyemail", Alfresco.forms.validation.email, null, "keyup");
+	
+            form.addValidation(this.id + "-input-telephone", Alfresco.forms.validation.phone, null, "keyup");
+            form.addValidation(this.id + "-input-mobile", Alfresco.forms.validation.phone, null, "keyup");
+            form.addValidation(this.id + "-input-companytelephone", Alfresco.forms.validation.phone, null, "keyup");
+            form.addValidation(this.id + "-input-companyfax", Alfresco.forms.validation.phone, null, "keyup");
             
             // Initialise the form
             form.init();

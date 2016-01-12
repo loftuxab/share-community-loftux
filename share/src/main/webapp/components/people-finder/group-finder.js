@@ -668,7 +668,7 @@
                   {
                      var response = YAHOO.lang.JSON.parse(oResponse.responseText);
                      this.widgets.dataTable.set("MSG_ERROR", response.message);
-                     this.widgets.dataTable.showTableMessage(response.message, YAHOO.widget.DataTable.CLASS_ERROR);
+                     this.widgets.dataTable.showTableMessage(Alfresco.util.encodeHTML(response.message), YAHOO.widget.DataTable.CLASS_ERROR);
                   }
                   catch(e)
                   {
@@ -733,7 +733,7 @@
        */
       _buildSearchParams: function GroupFinder__buildSearchParams(searchTerm)
       {
-         return "shortNameFilter=" + (this.options.wildcardPrefix ? "*" : "") + encodeURIComponent(searchTerm);
+         return "shortNameFilter=" + (this.options.wildcardPrefix ? "*" : "") + encodeURIComponent(searchTerm) + "&maxResults=" + this.options.maxSearchResults;
       }
    });
 })();

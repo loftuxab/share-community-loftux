@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2012 Alfresco Software Limited.
+ * Copyright (C) 2005-2015 Alfresco Software Limited.
  *
  * This file is part of Alfresco
  *
@@ -55,7 +55,8 @@
       this.selectedUsers = {};
       this.notAllowed = {};
       this.following = {};
-
+      this.isAddUsersPage = htmlId.indexOf("_add-users_") > 0
+      
       /**
        * Decoupled event listeners
        */
@@ -251,6 +252,11 @@
       {  
          var me = this;
          
+         if (this.isAddUsersPage)
+         {
+            this.options.viewMode = Alfresco.PeopleFinder.VIEW_MODE_COMPACT;
+         }
+         
          // View mode specific setup
          if (this.options.viewMode == Alfresco.PeopleFinder.VIEW_MODE_COMPACT)
          {
@@ -259,7 +265,7 @@
          }
          else if (this.options.viewMode == Alfresco.PeopleFinder.VIEW_MODE_FULLPAGE)
          {
-            Dom.setStyle(this.id + "-results", "height", "auto");
+            Dom.addClass(this.id + "-results", "alf-full-page");
             Dom.removeClass(this.id + "-help", "hidden");
             
             // Kick off ajax request to get the users the current user is following
@@ -288,7 +294,7 @@
          }
          else
          {
-            Dom.setStyle(this.id + "-results", "height", "300px");
+            Dom.addClass(this.id + "-results", "alf-default");
             Dom.removeClass(this.id + "-results", "hidden");
          }
          
@@ -432,9 +438,7 @@
             var userName = oRecord.getData("userName"),
                name = userName,
                firstName = oRecord.getData("firstName"),
-               lastName = oRecord.getData("lastName"),
-               userStatus = oRecord.getData("userStatus"),
-               userStatusTime = oRecord.getData("userStatusTime");
+               lastName = oRecord.getData("lastName");
             
             if ((firstName !== undefined) || (lastName !== undefined))
             {
@@ -468,10 +472,6 @@
                   desc += '<div class="detail"><span>' + me.msg("label.company") + ":</span> " + $html(organization) + '</div>';
                }
             }
-            if (userStatus !== null && userStatus.length > 0 && me.options.viewMode !== Alfresco.PeopleFinder.VIEW_MODE_COMPACT)
-            {
-               desc += '<div class="user-status">' + $html(userStatus) + ' <span>(' + Alfresco.util.relativeTime(Alfresco.util.fromISO8601(userStatusTime.iso8601)) + ')</span></div>';
-            }
             elCell.innerHTML = desc;
          };
       },
@@ -495,17 +495,34 @@
             Dom.setStyle(elCell.parentNode, "text-align", "right");
             
             var userName = oRecord.getData("userName"),
-               desc = '<span id="' + me.id + '-action-' + userName + '"></span>';
+               desc = '<span id="' + me.id + '-action-' + userName + '" class="alf-colored-button"></span>';
             elCell.innerHTML = desc;
             
             // This component is used as part of the People Search page and various People Picker components
             // so create the Add button if required - it is not displayed in the full people search list mode.
             if (me.options.viewMode !== Alfresco.PeopleFinder.VIEW_MODE_FULLPAGE)
             {
+               var labelValue;
+               if (!me.options.addButtonLabel)
+               {
+                  if (me.isAddUsersPage)
+                  {
+                     labelValue = me.msg("button.select");
+                  }
+                  else
+                  {
+                     labelValue = me.msg("button.add") + " " + me.options.addButtonSuffix;
+                  }
+               }
+               else
+               {
+                  labelValue = me.options.addButtonLabel + " " + me.options.addButtonSuffix;
+               }
+               
                var button = new YAHOO.widget.Button(
                {
                   type: "button",
-                  label: (me.options.addButtonLabel ? me.options.addButtonLabel : me.msg("button.add")) + " " + me.options.addButtonSuffix,
+                  label: labelValue,
                   name: me.id + "-selectbutton-" + userName,
                   container: me.id + '-action-' + userName,
                   tabindex: 0,
@@ -552,7 +569,7 @@
       },
       
       /**
-       * Helper to retrun whether to render the Following actions for a record.
+       * Helper to return whether to render the Following actions for a record.
        * 
        * @return true to render the Following actions for the given datagrid record
        */
@@ -576,7 +593,7 @@
          [
             { key: "avatar", label: "Avatar", sortable: false, formatter: this.fnRenderCellAvatar(), width: this.options.viewMode == Alfresco.PeopleFinder.VIEW_MODE_COMPACT ? 36 : 70 },
             { key: "person", label: "Description", sortable: false, formatter: this.fnRenderCellDescription() },
-            { key: "actions", label: "Actions", sortable: false, formatter: this.fnRenderCellActions(), width: 120 }
+            { key: "actions", label: "Actions", sortable: false, formatter: this.fnRenderCellActions() }
          ];
 
          // DataTable definition
@@ -989,7 +1006,7 @@
                   {
                      var response = YAHOO.lang.JSON.parse(oResponse.responseText);
                      this.widgets.dataTable.set("MSG_ERROR", response.message);
-                     this.widgets.dataTable.showTableMessage(response.message, YAHOO.widget.DataTable.CLASS_ERROR);
+                     this.widgets.dataTable.showTableMessage(Alfresco.util.encodeHTML(response.message), YAHOO.widget.DataTable.CLASS_ERROR);
                   }
                   catch(e)
                   {

@@ -26,7 +26,6 @@ import static org.alfresco.po.share.dashlet.SiteActivitiesTypeFilter.ALL_ITEMS;
 import static org.alfresco.po.share.dashlet.SiteActivitiesTypeFilter.COMMENTS;
 import static org.alfresco.po.share.dashlet.SiteActivitiesTypeFilter.CONTENT;
 import static org.alfresco.po.share.dashlet.SiteActivitiesTypeFilter.MEMBERSHIPS;
-import static org.alfresco.po.share.dashlet.SiteActivitiesTypeFilter.STATUS_UPDATES;
 import static org.alfresco.po.share.dashlet.SiteActivitiesUserFilter.EVERYONES_ACTIVITIES;
 import static org.alfresco.po.share.dashlet.SiteActivitiesUserFilter.IM_FOLLOWING;
 import static org.alfresco.po.share.dashlet.SiteActivitiesUserFilter.MY_ACTIVITIES;
@@ -38,14 +37,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.exception.PageException;
 import org.alfresco.po.share.ShareLink;
 import org.alfresco.po.share.dashlet.MyActivitiesDashlet.LinkType;
 import org.alfresco.po.share.site.document.DocumentDetailsPage;
-import org.alfresco.po.share.util.SiteUtil;
+
 import org.alfresco.po.thirdparty.firefox.RssFeedPage;
 import org.alfresco.test.FailedTestListener;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.exception.PageException;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -75,13 +74,13 @@ public class SiteAcitivitiesDashletTest extends AbstractSiteDashletTest
     @AfterClass(groups = { "alfresco-one" })
     public void deleteSite()
     {
-        SiteUtil.deleteSite(drone, siteName);
+        siteUtil.deleteSite(username, password, siteName);
     }
 
     @Test
     public void instantiateDashlet()
     {
-        SiteActivitiesDashlet dashlet = new SiteActivitiesDashlet(drone);
+        SiteActivitiesDashlet dashlet = dashletFactory.getDashlet(driver, SiteActivitiesDashlet.class).render();
         Assert.assertNotNull(dashlet);
     }
 
@@ -102,8 +101,8 @@ public class SiteAcitivitiesDashletTest extends AbstractSiteDashletTest
     @Test(dependsOnMethods = "selectSiteActivityDashlet")
     public void getActivities() throws IOException
     {
-        SiteActivitiesDashlet dashlet = new SiteActivitiesDashlet(drone).render();
-        RenderTime timer = new RenderTime(200000);
+        SiteActivitiesDashlet dashlet = dashletFactory.getDashlet(driver, SiteActivitiesDashlet.class).render();
+        RenderTime timer = new RenderTime(50000);
         while (true)
         {
             timer.start();
@@ -119,7 +118,7 @@ public class SiteAcitivitiesDashletTest extends AbstractSiteDashletTest
             }
             try
             {
-                drone.refresh();
+                driver.navigate().refresh();
                 dashlet = siteDashBoard.getDashlet(SITE_ACTIVITY).render();
                 if (!dashlet.getSiteActivities(LinkType.User).isEmpty())
                     break;
@@ -159,7 +158,7 @@ public class SiteAcitivitiesDashletTest extends AbstractSiteDashletTest
             timer.start();
             try
             {
-                drone.refresh();
+                driver.navigate().refresh();
                 dashlet = siteDashBoard.getDashlet(SITE_ACTIVITY).render();
                 if (!dashlet.getSiteActivities(LinkType.User).isEmpty())
                     break;
@@ -196,11 +195,11 @@ public class SiteAcitivitiesDashletTest extends AbstractSiteDashletTest
     @Test(dependsOnMethods = "selectFake", priority = 1)
     public void verifyRss()
     {
-        String currentUrl = drone.getCurrentUrl();
+        String currentUrl = driver.getCurrentUrl();
         SiteActivitiesDashlet dashlet = siteDashBoard.getDashlet(SITE_ACTIVITY).render();
         RssFeedPage rssFeedPage = dashlet.selectRssFeed(username, password);
         assertTrue(rssFeedPage.isSubscribePanelDisplay());
-        drone.navigateTo(currentUrl);
+        driver.navigate().to(currentUrl);
     }
 
     @Test(dependsOnMethods = "selectFake", priority = 2)
@@ -230,7 +229,6 @@ public class SiteAcitivitiesDashletTest extends AbstractSiteDashletTest
         dashlet.clickTypeButton();
         List<SiteActivitiesTypeFilter> allTypeFilters = dashlet.getTypeFilters();
         assertTrue(allTypeFilters.contains(ALL_ITEMS));
-        assertTrue(allTypeFilters.contains(STATUS_UPDATES));
         assertTrue(allTypeFilters.contains(COMMENTS));
         assertTrue(allTypeFilters.contains(CONTENT));
         assertTrue(allTypeFilters.contains(MEMBERSHIPS));

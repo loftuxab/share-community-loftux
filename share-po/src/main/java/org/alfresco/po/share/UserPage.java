@@ -1,12 +1,12 @@
 package org.alfresco.po.share;
 
+import org.alfresco.po.HtmlPage;
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.RenderWebElement;
+import org.alfresco.po.exception.PageException;
+import org.alfresco.po.exception.PageOperationException;
 import org.alfresco.po.share.user.AccountSettingsPage;
 import org.alfresco.po.share.user.MyProfilePage;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.RenderWebElement;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.exception.PageException;
-import org.alfresco.webdrone.exception.PageOperationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openqa.selenium.By;
@@ -26,23 +26,16 @@ public class UserPage extends SharePage
     @RenderWebElement
     private static final By USER_PAGE_CSS = By.cssSelector("#HEADER_USER_MENU");
     private static final By MY_PROFILE_CSS = By.cssSelector("td#HEADER_USER_MENU_PROFILE_text");
-    private static final By STATUS_LINK_CSS = By.cssSelector("td#HEADER_USER_MENU_SET_STATUS_text");
     private static final By HELP_CSS = By.cssSelector("td#HEADER_USER_MENU_HELP_text");
     private static final By CHANGE_PASSWORD_CSS = By.cssSelector("td#HEADER_USER_MENU_CHANGE_PASSWORD_text");
     private static final By LOGOUT_CSS = By.cssSelector("td#HEADER_USER_MENU_LOGOUT_text");
     private static final By ACCOUNT_SETTINGS = By.cssSelector("td#CLOUD__NetworkAdminToolsLink_text>a.alfresco-navigation-_HtmlAnchorMixin");
-    private Log logger = LogFactory.getLog(this.getClass());
 
-    /**
-     * Constructor.
-     * 
-     * @param drone
-     *            WebDriver to access page
-     */
-    public UserPage(WebDrone drone)
-    {
-        super(drone);
-    }
+    private static final By USER_DASHBOARD_LINK = By.linkText("User Dashboard");
+    private static final By USE_CURRENT_PAGE_LINK = By.cssSelector("td#HEADER_USER_MENU_SET_CURRENT_PAGE_AS_HOME_text");
+    private static final By USE_MY_DASHBOARD_LINK = By.cssSelector("td#HEADER_USER_MENU_SET_DASHBOARD_AS_HOME_text");
+
+    private Log logger = LogFactory.getLog(this.getClass());
 
     @SuppressWarnings("unchecked")
     @Override
@@ -60,13 +53,6 @@ public class UserPage extends SharePage
         return render(new RenderTime(maxPageLoadingTime));
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public UserPage render(final long time)
-    {
-        return render(new RenderTime(time));
-    }
-
     /**
      * verifies whether form is present.
      * 
@@ -76,7 +62,7 @@ public class UserPage extends SharePage
     {
         try
         {
-            return drone.findAndWaitById(CHANGE_PASSWORD_FORM_ID).isDisplayed();
+            return findAndWaitById(CHANGE_PASSWORD_FORM_ID).isDisplayed();
         }
         catch (TimeoutException ex)
         {
@@ -93,7 +79,7 @@ public class UserPage extends SharePage
     {
         try
         {
-            return drone.find(MY_PROFILE_CSS).isDisplayed();
+            return driver.findElement(MY_PROFILE_CSS).isDisplayed();
         }
         catch (NoSuchElementException e)
         {
@@ -110,24 +96,7 @@ public class UserPage extends SharePage
     {
         try
         {
-            return drone.find(HELP_CSS).isDisplayed();
-        }
-        catch (NoSuchElementException e)
-        {
-        }
-        return false;
-    }
-
-    /**
-     * verifies whether status link is present.
-     * 
-     * @return true if status link present , else false.
-     */
-    public boolean isSetStausLinkPresent()
-    {
-        try
-        {
-            return drone.find(STATUS_LINK_CSS).isDisplayed();
+            return driver.findElement(HELP_CSS).isDisplayed();
         }
         catch (NoSuchElementException e)
         {
@@ -144,7 +113,7 @@ public class UserPage extends SharePage
     {
         try
         {
-            return drone.find(CHANGE_PASSWORD_CSS).isDisplayed();
+            return driver.findElement(CHANGE_PASSWORD_CSS).isDisplayed();
         }
         catch (NoSuchElementException e)
         {
@@ -161,7 +130,7 @@ public class UserPage extends SharePage
     {
         try
         {
-            return drone.find(LOGOUT_CSS).isDisplayed();
+            return driver.findElement(LOGOUT_CSS).isDisplayed();
         }
         catch (NoSuchElementException e)
         {
@@ -178,7 +147,41 @@ public class UserPage extends SharePage
     {
         try
         {
-            return drone.find(ACCOUNT_SETTINGS).isDisplayed();
+            return driver.findElement(ACCOUNT_SETTINGS).isDisplayed();
+        }
+        catch (NoSuchElementException e)
+        {
+        }
+        return false;
+    }
+
+    /**
+     * verifies whether Use Current Page as a home page link is present.
+     * 
+     * @return true if Use Current Page out option present , else false.
+     */
+    public boolean isUseCurrentPagePresent()
+    {
+        try
+        {
+            return driver.findElement(USE_CURRENT_PAGE_LINK).isDisplayed();
+        }
+        catch (NoSuchElementException e)
+        {
+        }
+        return false;
+    }
+
+    /**
+     * verifies whether Use My Dashboard as a home page link is present.
+     * 
+     * @return true if Use My Dashboard out option present , else false.
+     */
+    public boolean isUseMyDashboardPresent()
+    {
+        try
+        {
+            return driver.findElement(USE_MY_DASHBOARD_LINK).isDisplayed();
         }
         catch (NoSuchElementException e)
         {
@@ -191,10 +194,10 @@ public class UserPage extends SharePage
      * 
      * @return {@link MyProfilePage}
      */
-    public MyProfilePage selectMyProfile()
+    public HtmlPage selectMyProfile()
     {
-        drone.findAndWait(MY_PROFILE_CSS).click();
-        return new MyProfilePage(drone);
+        findAndWait(MY_PROFILE_CSS).click();
+        return getCurrentPage();
     }
 
     /**
@@ -203,13 +206,12 @@ public class UserPage extends SharePage
      * 
      * @return {@link LoginPage} page response
      */
-    public LoginPage logout()
+    public HtmlPage logout()
     {
         try
         {
-            drone.findAndWait(LOGOUT_CSS).click();
-            return new LoginPage(drone);
-
+            findAndWait(LOGOUT_CSS).click();
+            return getCurrentPage();
         }
         catch (TimeoutException e)
         {
@@ -225,14 +227,10 @@ public class UserPage extends SharePage
      */
     public AccountSettingsPage selectAccountSettingsPage()
     {
-        if (!alfrescoVersion.isCloud())
-        {
-            throw new UnsupportedOperationException("This option is in cloud only, not available for Enterprise");
-        }
         try
         {
-            drone.findAndWait(ACCOUNT_SETTINGS).click();
-            return new AccountSettingsPage(drone);
+            findAndWait(ACCOUNT_SETTINGS).click();
+            return factoryPage.instantiatePage(driver, AccountSettingsPage.class);
         }
         catch (TimeoutException e)
         {
@@ -251,8 +249,8 @@ public class UserPage extends SharePage
     {
         try
         {
-            drone.findAndWait(CHANGE_PASSWORD_CSS).click();
-            return new ChangePasswordPage(drone);
+            findAndWait(CHANGE_PASSWORD_CSS).click();
+            return getCurrentPage().render();
         }
         catch (TimeoutException e)
         {
@@ -262,13 +260,70 @@ public class UserPage extends SharePage
     }
 
     /**
+     * Mimics the action of selecting User Dashboard link.
+     * 
+     * @return {@link HtmlPage} current page po
+     */
+    public HtmlPage selectUserDashboard()
+    {
+        try
+        {
+            findAndWait(USER_DASHBOARD_LINK).click();
+            return getCurrentPage();
+        }
+        catch (TimeoutException e)
+        {
+            logger.error("Exceeded the time to find css.", e);
+        }
+        throw new PageOperationException("Not able to find the User Dashboard link");
+    }
+
+    /**
+     * Mimics the action of selecting Use Current Page link.
+     * 
+     * @return {@link HtmlPage} current page po
+     */
+    public HtmlPage selectUseCurrentPage()
+    {
+        try
+        {
+            findAndWait(USE_CURRENT_PAGE_LINK).click();
+            return getCurrentPage();
+        }
+        catch (TimeoutException e)
+        {
+            logger.error("Exceeded the time to find css.", e);
+        }
+        throw new PageOperationException("Not able to find the Use Current Page link");
+    }
+
+    /**
+     * Mimics the action of selecting Use My Dashboard link.
+     * 
+     * @return {@link HtmlPage} user dashboard page po
+     */
+    public HtmlPage selectUseMyDashboardPage()
+    {
+        try
+        {
+            findAndWait(USE_MY_DASHBOARD_LINK).click();
+            return getCurrentPage();
+        }
+        catch (TimeoutException e)
+        {
+            logger.error("Exceeded the time to find css.", e);
+        }
+        throw new PageOperationException("Not able to find the Use My Dashboard Page link");
+    }
+
+    /**
      * Click Help Link
      */
     public void clickHelp()
     {
         try
         {
-            drone.findAndWait(HELP_CSS).click();
+            findAndWait(HELP_CSS).click();
         }
         catch (NoSuchElementException ex)
         {
@@ -278,7 +333,7 @@ public class UserPage extends SharePage
         catch (TimeoutException e)
         {
             logger.error("Exceeded the time to find Help link.", e);
-            throw new PageOperationException("Not able to find the Help link");
+            throw new PageOperationException("Not able to find the Help link", e);
         }
     }
 

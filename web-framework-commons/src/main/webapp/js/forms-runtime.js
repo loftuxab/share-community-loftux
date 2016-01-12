@@ -1135,6 +1135,7 @@ Alfresco.forms.validation = Alfresco.forms.validation || {};
                      if (Alfresco.logger.isDebugEnabled())
                         Alfresco.logger.debug("JSON data request cancelled in doBeforeAjaxRequest()");
                   }
+                  this._toggleSubmitElements(true);
                }
                else
                {
@@ -2279,7 +2280,7 @@ Alfresco.forms.validation = Alfresco.forms.validation || {};
          args = {};
       }
 
-      var valid = false
+      var valid = true;
       if (field.value && field.value.length > 0)
       {
          //Strip out the name and surrounding angle brackets, if present.
@@ -2316,6 +2317,34 @@ Alfresco.forms.validation = Alfresco.forms.validation || {};
          valid = Alfresco.forms.validation.regexMatch(field, args, event, form);
       }
       return valid;
+   };
+   
+   /**
+    * Phone validation handler
+    *
+    * @method phone
+    * @param field {object} The element representing the field the validation is for
+    * @param args {object} Not used
+    * @param event {object} The event that caused this handler to be called, maybe null
+    * @param form {object} The forms runtime class instance the field is being managed by
+    * @param silent {boolean} Determines whether the user should be informed upon failure
+    * @param message {string} Message to display when validation fails, maybe null
+    * @static
+    */
+   Alfresco.forms.validation.phone = function phone(field, args, event, form, silent, message)
+   {
+      if (Alfresco.logger.isDebugEnabled())
+         Alfresco.logger.debug("Validating field '" + field.id + "' is a valid phone number");
+
+      if (!args)
+      {
+         args = {};
+      }
+
+      args.pattern = /^[0-9\(\)\[\]\-\+\*#\\:\/,; ]+$/;
+      args.match = true;
+
+      return Alfresco.forms.validation.regexMatch(field, args, event, form, silent, message);
    };
 
 

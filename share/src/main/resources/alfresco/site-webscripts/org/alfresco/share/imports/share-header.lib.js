@@ -28,6 +28,35 @@ function getLicenseUsage() {
    return usage;
 }
 
+/**
+ *
+ * @returns {object} Details about Share Services.
+ */
+function getShareServices() {
+   var ss = {};
+
+   if (user.properties["alfUserLoaded"] > new Date().getTime() - 15000)
+   {
+      // retrieve ShareServices information
+      var connector = remote.connect("alfresco-api");
+      var result = connector.get("/-default-/private/alfresco/versions/1/modulepackages/alfresco-share-services");
+      if (result.status.code == status.STATUS_OK)
+      {
+         ss = JSON.parse(result);
+      }
+   }
+   else
+   {
+      //Don't check shareservices, lets inform the widget
+      ss['nocheck'] = true;
+   }
+   return ss;
+}
+
+function getShareVersion() {
+   return shareManifest.getSpecificationVersion();
+}
+
 /* *********************************************************************************
  *                                                                                 *
  * USER GROUP INFO                                                                 *
@@ -479,7 +508,7 @@ function getSiteNavigationWidgets() {
                label: (pages[i].sitePageTitle) ? pages[i].sitePageTitle : pages[i].title,
                pageId: pages[i].pageId,
                targetUrl: targetUrl,
-               selected: ((page.url.url.startsWith(page.url.servletContext + "/" + targetUrl)) || 
+               selected: ((page.url.url.startsWith(page.url.servletContext + "/" + targetUrl)) ||
                           (pages[i].pageId == "documentlibrary" && page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/document-details")) ||
                           (pages[i].pageId == "wiki-page" && (page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/wiki"))) ||
                           (pages[i].pageId == "blog-postlist" && (page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/blog"))) ||
@@ -496,7 +525,7 @@ function getSiteNavigationWidgets() {
             targetUrl: "site/" + page.url.templateArgs.site + "/site-members",
             selected: ((page.titleId == "page.siteMembers.title") ||
                        (page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/site-groups")) ||
-                       (page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/invite")) ||
+                       (page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/" + config.scoped["SitePages"]["additional-pages"].getChildValue("add-users"))) ||
                        (page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/add-groups")) ||
                        (page.url.url.startsWith(page.url.servletContext + "/site/" + page.url.templateArgs.site + "/pending-invites")))
          }
@@ -558,7 +587,7 @@ function getSubNavigationWidgets() {
                  "&sa=" + (args["a"] != null ? encodeURIComponent(args["a"]) : "") +
                  "&sr=" + (args["r"] != null ? encodeURIComponent(args["r"]) : "") +
                  "&sq=" + (args["q"] != null ? encodeURIComponent(args["q"]) : "");
-         
+
       }
       var advancedSearchUrl = "advsearch?" + query;
       if (page.url.templateArgs.site == null)
@@ -582,10 +611,10 @@ function getSubNavigationWidgets() {
                selected: false
             }
          });
-         
+
          advancedSearchUrl = "site/" + page.url.templateArgs.site + "/" + advancedSearchUrl;
       }
-      
+
       // Add the advanced search link...
       navigationWidgets.push({
          id: "HEADER_ADVANCED_SEARCH",
@@ -612,7 +641,7 @@ function getSubNavigationWidgets() {
                      "&r=" + (args["sr"] != null ? encodeURIComponent(args["sr"]) : "") +
                      "&q=" + (args["sq"] != null ? encodeURIComponent(args["sq"]) : "");
          model.backlink = query;
-         
+
          var searchUrl = "search?" + query;
          if (page.url.templateArgs.site == null)
          {
@@ -622,7 +651,7 @@ function getSubNavigationWidgets() {
          {
             searchUrl = "site/" + page.url.templateArgs.site + "/" + searchUrl;
          }
-         
+
          navigationWidgets.push({
             id: "HEADER_SEARCH_BACK_TO_RESULTS",
             name: "alfresco/menus/AlfMenuBarItem",
@@ -635,7 +664,7 @@ function getSubNavigationWidgets() {
             }
          });
       }
-      
+
       if (page.url.templateArgs.site == null)
       {
          // We're on the basic search page
@@ -682,36 +711,6 @@ function getSubNavigationWidgets() {
 
 /* *********************************************************************************
  *                                                                                 *
- * USER STATUS WIDGET DEFINITION                                                   *
- *                                                                                 *
- ***********************************************************************************/
-function getUserStatusWidget()
-{
-   var userStatus = "",
-      userStatusTime = "";
-
-   if (user.properties["userStatus"] != null)
-   {
-      userStatus = user.properties["userStatus"];
-   }
-   if (user.properties["userStatusTime"] != null)
-   {
-      userStatusTime = user.properties["userStatusTime"];
-   }
-
-   return {
-      id: "HEADER_USER_STATUS",
-      name: "alfresco/header/CurrentUserStatus",
-      config: {
-         id: "HEADER_USER_STATUS",
-         userStatus: userStatus,
-         userStatusTime: userStatusTime
-      }
-   };
-}
-
-/* *********************************************************************************
- *                                                                                 *
  * CONSTRUCT HELP LINK                                                             *
  *                                                                                 *
  ***********************************************************************************/
@@ -719,13 +718,8 @@ function getUserStatusWidget()
  * This is the default function for getting the help URL for Share.
  */
 function getHelpLink() {
-   var helpConfig = config.scoped["HelpPages"],
-       helpLink = "";
-   if (helpConfig != null)
-   {
-      helpConfig = helpConfig["help-pages"];
-      helpLink = (helpConfig != null) ? helpConfig.getChildValue("share-help") : "";
-   }
+   var docsEdition = context.properties["docsEdition"].getValue();
+   var helpLink = msg.get("share-help.docs-url", [docsEdition]);
    return helpLink;
 }
 
@@ -747,7 +741,7 @@ function generateAppItems() {
          config: {
             id: "HEADER_HOME",
             label: "header.menu.home.label",
-            targetUrl: "user/" + encodeURIComponent(user.name) + "/dashboard"
+            targetUrl: getUserHomeTargetUrl()
          }
       },
       {
@@ -785,8 +779,8 @@ function generateAppItems() {
             id: "HEADER_TASKS",
             label: "header.menu.tasks.label",
             widgets: [
-               {  
-                  id: "HEADER_TASKS_GROUP", 
+               {
+                  id: "HEADER_TASKS_GROUP",
                   name: "alfresco/menus/AlfMenuGroup",
                   config: {
                      widgets: [
@@ -898,16 +892,14 @@ function generateUserItems() {
 function getUserMenuWidgets()
 {
    var userMenuWidgets = [
-      getUserStatusWidget(),
       {
-         id: "HEADER_USER_MENU_SET_STATUS",
-         name: "alfresco/header/AlfMenuItem",
-         config:
-         {
-            id: "HEADER_USER_MENU_SET_STATUS",
-            label: "set_status.label",
-            iconClass: "alf-user-status-icon",
-            publishTopic: "ALF_SET_USER_STATUS"
+         id: "HEADER_USER_MENU_DAHSBOARD",
+         name: "alfresco/menus/AlfMenuItem",
+         config: {
+            id: "HEADER_USER_MENU_DASHBOARD",
+            label: "header.menu.user_dashboard.label",
+            iconClass: "alf-user-dashboard-icon",
+            targetUrl: "user/" + encodeURIComponent(user.name) + "/dashboard"
          }
       },
       {
@@ -920,23 +912,8 @@ function getUserMenuWidgets()
             iconClass: "alf-user-profile-icon",
             targetUrl: "user/" + encodeURIComponent(user.name) + "/profile"
          }
-      }
-   ];
-   if (user.capabilities.isMutable)
-   {
-      userMenuWidgets.push({
-         id: "HEADER_USER_MENU_PASSWORD",
-         name: "alfresco/header/AlfMenuItem",
-         config:
-         {
-            id: "HEADER_USER_MENU_CHANGE_PASSWORD",
-            label: "change_password.label",
-            iconClass: "alf-user-password-icon",
-            targetUrl: "user/" + encodeURIComponent(user.name) + "/change-password"
-         }
-      });
-   }
-   userMenuWidgets.push({
+      },
+      {
          id: "HEADER_USER_MENU_HELP",
          name: "alfresco/header/AlfMenuItem",
          config:
@@ -948,22 +925,120 @@ function getUserMenuWidgets()
             targetUrlType: "FULL_PATH",
             targetUrlLocation: "NEW"
          }
-      });
-   if (!context.externalAuthentication)
-   {
-      userMenuWidgets.push({
-         id: "HEADER_USER_MENU_LOGOUT",
-         name: "alfresco/header/AlfMenuItem",
+      },
+      {
+         id: "HEADER_USER_MENU_HOME_PAGE_GROUP",
+         name: "alfresco/menus/AlfMenuGroup",
          config:
          {
+            label: "group.home_page.label",
+            widgets:
+            [
+               {
+                  id: "HEADER_USER_MENU_SET_CURRENT_PAGE_AS_HOME",
+                  name: "alfresco/header/AlfMenuItem",
+                  config:
+                  {
+                     id: "HEADER_USER_MENU_SET_CURRENT_PAGE_AS_HOME",
+                     label: "set_current_page_as_home.label",
+                     iconClass: "alf-user-set-homepage-current-icon",
+                     publishTopic: "ALF_SET_CURRENT_PAGE_AS_HOME",
+                     publishPayload: {
+                        servletContext: page.url.servletContext
+                     }
+                  }
+               },
+               {
+                  id: "HEADER_USER_MENU_SET_DASHBOARD_AS_HOME",
+                  name: "alfresco/header/AlfMenuItem",
+                  config:
+                  {
+                     id: "HEADER_USER_MENU_SET_DASHBOARD_AS_HOME",
+                     label: "set_dashboard_as_home.label",
+                     iconClass: "alf-user-set-homepage-dashboard-icon",
+                     publishTopic: "ALF_SET_USER_HOME_PAGE",
+                     publishPayload: {
+                        homePage: getUserHomePageDashboard()
+                     }
+                  }
+               }
+            ]
+         }
+      }
+   ];
+   if (user.capabilities.isMutable || !context.externalAuthentication)
+   {
+      var otherWidgets = [];
+      if (user.capabilities.isMutable)
+      {
+         otherWidgets.push({
+            id: "HEADER_USER_MENU_PASSWORD",
+            name: "alfresco/header/AlfMenuItem",
+            config:
+            {
+               id: "HEADER_USER_MENU_CHANGE_PASSWORD",
+               label: "change_password.label",
+               iconClass: "alf-user-password-icon",
+               targetUrl: "user/" + encodeURIComponent(user.name) + "/change-password"
+            }
+         });
+      }
+      if (!context.externalAuthentication)
+      {
+         otherWidgets.push({
             id: "HEADER_USER_MENU_LOGOUT",
-            label: "logout.label",
-            iconClass: "alf-user-logout-icon",
-            publishTopic: "ALF_DOLOGOUT"
+            name: "alfresco/header/AlfMenuItem",
+            config:
+            {
+               id: "HEADER_USER_MENU_LOGOUT",
+               label: "logout.label",
+               iconClass: "alf-user-logout-icon",
+               publishTopic: "ALF_DOLOGOUT"
+            }
+         });
+      }
+      userMenuWidgets.push({
+         id: "HEADER_USER_MENU_OTHER_GROUP",
+         name: "alfresco/menus/AlfMenuGroup",
+         config:
+         {
+            label: "group.other.label",
+            widgets: otherWidgets,
+            additionalCssClasses: "alf-menu-group-no-label"
          }
       });
    }
    return userMenuWidgets;
+}
+
+/**
+ * Gets the user home page in a format for menu links, i.e.
+ * "site/swsdp/documentlibrary"
+ *
+ * @returns {object} The user home page target URL
+ */
+function getUserHomeTargetUrl() {
+   var userHomeTargetUrl = "..";
+   if (userPreferences &&
+         userPreferences.org &&
+         userPreferences.org.alfresco &&
+         userPreferences.org.alfresco.share &&
+         userPreferences.org.alfresco.share.user &&
+         userPreferences.org.alfresco.share.user.homePage)
+   {
+      userHomeTargetUrl = userPreferences.org.alfresco.share.user.homePage.replace("/page/", "");
+   }
+   return userHomeTargetUrl;
+}
+
+/**
+ * Gets the user dashboard page in a format to be persisted as a home page
+ * preference, i.e. "/page/user/jsmith/dashboard"
+ *
+ * @returns {object} The user dashboard page path
+ */
+function getUserHomePageDashboard() {
+   return "/page/user/" + encodeURIComponent(user.name) + "/dashboard";
 }
 
 /**
@@ -1070,6 +1145,16 @@ function getPageTitle() {
    return pageTitle;
 }
 
+/**
+ * Returns information about the site visibility
+ * @param dataType the type of information to get
+ * @returns {String}
+ */
+function getSiteVisibilityData(dataType, visibility) {
+   var propertyKey = "site.visibility." + dataType + "." + visibility;
+   return msg.get(propertyKey);
+}
+
 
 /* *********************************************************************************
  *                                                                                 *
@@ -1165,7 +1250,7 @@ function getTitleBarModel() {
                   iconClass: "alf-user-icon",
                   iconAltText: msg.get("header.menu.invite.altText"),
                   title: msg.get("header.menu.invite.altText"),
-                  targetUrl: "site/" + page.url.templateArgs.site + "/invite"
+                  targetUrl: "site/" + page.url.templateArgs.site + "/" + config.scoped["SitePages"]["additional-pages"].getChildValue("add-users")
                }
             });
 
@@ -1344,8 +1429,54 @@ function getHeaderServices() {
       "alfresco/services/SiteService",
       "alfresco/services/LogoutService",
       "alfresco/services/NotificationService",
-      "alfresco/services/DialogService"
+      "alfresco/services/DialogService",
+      "share/services/UserHomePageService"
    ];
+   if (page.url.templateArgs.site)
+   {
+      var siteData = getSiteData();
+      if (siteData != null)
+      {
+         if (siteData.profile.shortName == "")
+         {
+            services.push({
+               name: "share/services/UrlUnavailableService",
+               config: {
+                  httpStatusCode: 404,
+                  url: page.url.url
+               }
+            });
+         }
+         else
+         {
+            if (!user.isAdmin && siteData.profile.visibility != "PUBLIC" && siteData.profile.visibility != "MODERATED" && siteData.userIsMember === false)
+            {
+               services.push({
+                  name: "share/services/UrlUnavailableService",
+                  config: {
+                     httpStatusCode: 401,
+                     url: page.url.url
+                  }
+               });
+            }
+            else
+            {
+               services.push({
+                  name: "share/services/LeaveSiteService",
+                  config: {
+                     publishPayload: {
+                        site: page.url.templateArgs.site,
+                        siteTitle: siteData.profile.title,
+                        user: user.name,
+                        userFullName: user.fullName
+                     }
+                  }
+               });
+            }
+         }
+      }
+   }
+
    // Only add the logging service when in client-debug mode...
    if (config.global.flags.getChildValue("client-debug") == "true")
    {
@@ -1472,7 +1603,7 @@ function getHeaderModel(pageTitle) {
       };
       headerMenus.appItems.push(loggingWidget);
    }
-    
+
    // Get the user and group data and generate a "currentItem" for it so that render filtering
    // can be applied based on group membership...
    var userGroupData = getUserGroupData();
@@ -1521,6 +1652,15 @@ function getHeaderModel(pageTitle) {
       name: "alfresco/header/LicenseWarning",
       config: {
          usage: getLicenseUsage(),
+         userIsAdmin: user.isAdmin
+      }
+   },
+   {
+      id: "HEADER_SHARE_SERVICES_WARNING",
+      name: "share/services/ServicesWarning",
+      config: {
+         shareServices: getShareServices(),
+         shareVersion: getShareVersion(),
          userIsAdmin: user.isAdmin
       }
    },
@@ -1577,6 +1717,36 @@ function getHeaderModel(pageTitle) {
       }
    }];
 
+   var siteData = getSiteData();
+   if (siteData && siteData.profile.visibility) {
+      var headerTitleBar = widgetUtils.findObject(headerModel, "id", "HEADER_TITLE_BAR");
+      headerTitleBar.config.widgets.push(
+            {
+               id: "HEADER_TITLE_VISIBILITY",
+               align: "left",
+               name: "alfresco/misc/AlfTooltip",
+               config: {
+                  widgets: [
+                     {
+                        name: "alfresco/html/Label",
+                        config: {
+                           label: getSiteVisibilityData("label", siteData.profile.visibility)
+                        }
+                     }
+                  ],
+                  widgetsForTooltip: [
+                     {
+                        name: "alfresco/html/Label",
+                        config: {
+                           label: getSiteVisibilityData("description", siteData.profile.visibility)
+                        }
+                     }
+                  ],
+                  additionalCssClasses: "alf-site-visibility"
+               }
+            });
+   }
+
    // If the user is not the admin, then add in a role-based menu item for sites management...
    if (!user.isAdmin)
    {
@@ -1590,6 +1760,19 @@ function getHeaderModel(pageTitle) {
                values: [true]
             }
          ]
+      });
+   }
+
+   /**
+    * If user is not Admin, and they belong to group GROUP_ALFRESCO_MODEL_ADMINISTRATORS, add model manager
+    * link to the share header.
+    */
+   if (!user.isAdmin && (user.properties["alfUserGroups"] != null && user.properties["alfUserGroups"].indexOf("GROUP_ALFRESCO_MODEL_ADMINISTRATORS") !== -1))
+   {
+      addNonAdminAdministrativeMenuItem(headerModel, {
+         id: "HEADER_CUSTOM_MODEL_MANAGER_CONSOLE",
+         label: "tool.custom-model-manager.label",
+         targetUrl: "console/custom-model-management-console/custom-model-manager"
       });
    }
 

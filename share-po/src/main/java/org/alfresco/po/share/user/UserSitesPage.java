@@ -18,17 +18,18 @@ package org.alfresco.po.share.user;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.exception.PageException;
+import org.alfresco.po.exception.PageOperationException;
 import org.alfresco.po.share.SharePage;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.exception.PageException;
-import org.alfresco.webdrone.exception.PageOperationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindAll;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * User Notification page object has a checkbox to enable and disable
@@ -40,19 +41,8 @@ import org.openqa.selenium.WebElement;
 public class UserSitesPage extends SharePage
 {
     private static final By NO_SITES_MESSAGE = By.cssSelector("div.viewcolumn p");
-    private static final By SITES_LIST = By.cssSelector("ul[id$='default-sites'] li");
 
     private final Log logger = LogFactory.getLog(UserSitesPage.class);
-
-    /**
-     * Constructor.
-     * 
-     * @param drone WebDriver to access page
-     */
-    public UserSitesPage(WebDrone drone)
-    {
-        super(drone);
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -75,7 +65,7 @@ public class UserSitesPage extends SharePage
             {
                 try
                 {
-                    if (drone.find(SITES_LIST).isDisplayed())
+                    if (siteItems.isEmpty())
                     {
                         break;
                     }
@@ -84,7 +74,8 @@ public class UserSitesPage extends SharePage
                 {
                 }
 
-                if (drone.find(NO_SITES_MESSAGE).isDisplayed() || drone.find(NO_SITES_MESSAGE).getText().equals(drone.getValue("user.profile.sites.nosite")))
+                if (driver.findElement(NO_SITES_MESSAGE).isDisplayed()
+                        || driver.findElement(NO_SITES_MESSAGE).getText().equals(getValue("user.profile.sites.nosite")))
                 {
                     break;
                 }
@@ -107,13 +98,6 @@ public class UserSitesPage extends SharePage
         return render(new RenderTime(maxPageLoadingTime));
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public UserSitesPage render(final long time)
-    {
-        return render(new RenderTime(time));
-    }
-
     /**
      * Get the navigation bar.
      * 
@@ -121,7 +105,7 @@ public class UserSitesPage extends SharePage
      */
     public ProfileNavigation getProfileNav()
     {
-        return new ProfileNavigation(drone);
+        return new ProfileNavigation(driver, factoryPage);
     }
 
     /**
@@ -134,9 +118,9 @@ public class UserSitesPage extends SharePage
         boolean present = false;
         try
         {
-            present = drone.find(NO_SITES_MESSAGE).getText().equals(drone.getValue("user.profile.sites.nosite"));
+            present = driver.findElement(NO_SITES_MESSAGE).getText().equals(getValue("user.profile.sites.nosite"));
 
-            if (present && drone.find(SITES_LIST).isDisplayed())
+            if (present && !siteItems.isEmpty())
             {
                 throw new PageException("No Sites message and site list displayed at the same time.");
             }
@@ -150,6 +134,9 @@ public class UserSitesPage extends SharePage
         return present;
     }
 
+    @FindAll({ @FindBy(css = "ul[id$='default-sites'] li") })
+    List<WebElement> siteItems;
+
     /**
      * Get a list of sites.
      * 
@@ -160,17 +147,16 @@ public class UserSitesPage extends SharePage
         List<UserSiteItem> sites = new ArrayList<>();
         try
         {
-            List<WebElement> elements = drone.findAndWaitForElements(SITES_LIST);
-
-            for (WebElement el : elements)
+            for (WebElement el : siteItems)
             {
-                UserSiteItem site = new UserSiteItem(el, drone);
-                sites.add(site);
+                UserSiteItem siteItem = (UserSiteItem) factoryPage.instantiatePageElement(driver, UserSiteItem.class);
+                siteItem.setWrappedElement(el);
+                sites.add(siteItem);
             }
         }
         catch (TimeoutException e)
         {
-            logger.error("Unable to find any sites in " + SITES_LIST, e);
+            logger.error("Unable to find any sites", e);
         }
         return sites;
     }
@@ -187,7 +173,8 @@ public class UserSitesPage extends SharePage
 
         for (UserSiteItem site : sites)
         {
-            if (site.getSiteName().equals(siteName))
+            String name = site.getSiteName();
+            if (siteName.equals(name))
             {
                 return site;
             }

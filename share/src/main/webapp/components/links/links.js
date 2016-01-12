@@ -345,9 +345,18 @@
                return true;
             }
             
+            var encUrl = "";
+            try
+            {
+               encUrl = encodeURI(decodeURI(url));
+            }
+            catch (e)
+            {
+               // ignore invalid URLs - they could be an attack vector or simply junk
+            }
             innerHtml += '<div class="detail"><span class="item"><em style="padding-right: 2px; float: left">' + me.msg("details.url") + ':</em> ' +
                          '<a style="float: left;" class="theme-color-1"' +  (internal ? '' : ' target="_blank" class="external"') + ' href=' + (needHttpPrefix(url) ? 'http://' : '') +
-                         encodeURI(decodeURI(url)) + '>' + $html(url).replace(/'/g, "") + '</a></span></div>';
+                         encUrl + '>' + $html(url).replace(/'/g, "") + '</a></span></div>';
 
             if (!me.options.simpleView)
             {
@@ -686,7 +695,7 @@
                {
                   var response = YAHOO.lang.JSON.parse(oResponse.responseText);
                   this.widgets.dataTable.set("MSG_ERROR", response.message);
-                  this.widgets.dataTable.showTableMessage(response.message, YAHOO.widget.DataTable.CLASS_ERROR);
+                  this.widgets.dataTable.showTableMessage(Alfresco.util.encodeHTML(response.message), YAHOO.widget.DataTable.CLASS_ERROR);
                   if (oResponse.status == 404)
                   {
                      YAHOO.Bubbling.fire("deactivateAllControls");
@@ -931,7 +940,7 @@
       {
          var url = YAHOO.lang.substitute(Alfresco.constants.URL_PAGECONTEXT + "site/{site}/links-linkedit",
          {
-            site: this.options.siteId
+            site: encodeURIComponent(this.options.siteId)
          });
          window.location = url;
       },
@@ -1081,6 +1090,9 @@
                isDefault: true
             }]
          });
+
+         var elements = Dom.getElementsByClassName('yui-button', 'span', 'prompt');
+         Dom.addClass(elements[0], 'alf-primary-button');
       },
 
       /**
@@ -1344,7 +1356,7 @@
       {
          var url = YAHOO.lang.substitute(Alfresco.constants.URL_FEEDSERVICECONTEXT + "components/links/rss?site={site}",
          {
-            site: this.options.siteId
+            site: encodeURIComponent(this.options.siteId)
          });
 
          return url;

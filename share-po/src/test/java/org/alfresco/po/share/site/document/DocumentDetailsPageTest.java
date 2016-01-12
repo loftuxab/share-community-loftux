@@ -7,7 +7,6 @@
  */
 package org.alfresco.po.share.site.document;
 
-import static org.alfresco.po.share.site.document.TinyMceEditor.FormatType.BOLD;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -21,10 +20,10 @@ import java.util.StringTokenizer;
 import org.alfresco.po.share.site.SitePage;
 import org.alfresco.po.share.site.UpdateFilePage;
 import org.alfresco.po.share.site.UploadFilePage;
-import org.alfresco.po.share.util.SiteUtil;
 import org.alfresco.test.FailedTestListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.social.alfresco.connect.exception.AlfrescoException;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -34,7 +33,7 @@ import org.testng.annotations.Test;
 
 /**
  * Integration test to verify document CRUD is operating correctly.
- * 
+ *
  * @author Michael Suzuki
  * @since 1.0
  */
@@ -46,6 +45,11 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
     private static Log logger = LogFactory.getLog(DocumentDetailsPageTest.class);
     private static final String COMMENT = "adding a comment to document is easy!!.";
     private static final String EDITED_COMMENT = "editing a comment is even easier!";
+    private String zipFile = "ZipFile" + System.currentTimeMillis();
+    private String acpFile = "AcpFile" + System.currentTimeMillis();
+    private String zipFilePrepared = "";
+    private String acpFilePrepared = "";
+    private final String ZIPPED_TXT_FILE_NAME = zipFile + ".txt";
     private String siteName;
     private File file;
     private String fileName;
@@ -55,7 +59,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
 
     /**
      * Pre test setup of a dummy file to upload.
-     * 
+     *
      * @throws Exception
      */
     @BeforeClass(groups = { "alfresco-one" })
@@ -63,10 +67,10 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
     {
         siteName = "ddSiteTest" + System.currentTimeMillis();
         loginAs(username, password);
-        // WebDroneUtil.loginAs(drone, shareUrl, username, password).render();
-        SiteUtil.createSite(drone, siteName, "description", "Public");
-        file = SiteUtil.prepareFile();
-        uploadFile = SiteUtil.prepareFile();
+        // PageUtils.loginAs(driver, shareUrl, username, password).render();
+        siteUtil.createSite(driver, username, password, siteName, "description", "Public");
+        file = siteUtil.prepareFile();
+        uploadFile = siteUtil.prepareFile();
         StringTokenizer st = new StringTokenizer(file.getName(), ".");
         fileName = st.nextToken();
         fileExt = st.nextToken();
@@ -84,12 +88,17 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
     @AfterClass(groups = { "alfresco-one" })
     public void deleteSite()
     {
-        SiteUtil.deleteSite(drone, siteName);
+        try
+        {
+            siteUtil.deleteSite(username, password, siteName);
+        }
+        catch(AlfrescoException ex){}
+        
     }
 
     /**
      * Test upload file functionality.
-     * 
+     *
      * @throws Exception
      * @throws Exception
      *             if error
@@ -101,9 +110,9 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====uploadFile====");
         }
-        SitePage site = (SitePage) drone.getCurrentPage();
+        SitePage site = (SitePage) resolvePage(driver);
         site.render();
-        DocumentLibraryPage docPage = site.getSiteNav().selectSiteDocumentLibrary().render();
+        DocumentLibraryPage docPage = site.getSiteNav().selectDocumentLibrary().render();
         docPage.render();
         docPage = (docPage.getNavigation().selectDetailedView()).render();
         // DocumentLibraryPage docPage = getDocumentLibraryPage(siteName).render();
@@ -157,7 +166,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         updatePage.selectMinorVersionChange();
         updatePage.setComment("Reloading the file with correct image");
         updatePage.uploadFile(file.getCanonicalPath());
-        docDetailsPage = updatePage.submit().render();
+        docDetailsPage = updatePage.submitUpload().render();
         if (logger.isTraceEnabled())
         {
             logger.trace("---upload submited----");
@@ -174,13 +183,13 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
     @Test(dependsOnMethods = "minorVersionUpdateOfAnExistingFile", groups = "ACEBug", enabled = false)
     public void majorVersionUpdateOfAnExistingFile() throws Exception
     {
-        DocumentDetailsPage docDetailsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docDetailsPage = resolvePage(driver).render();
         // Update file with a major version change
         UpdateFilePage updatePage = docDetailsPage.selectUploadNewVersion().render();
         updatePage.selectMajorVersionChange();
         updatePage.setComment("Reloading the final image");
         updatePage.uploadFile(file.getCanonicalPath());
-        docDetailsPage = updatePage.submit().render();
+        docDetailsPage = updatePage.submitUpload().render();
         Assert.assertEquals("2.0", docDetailsPage.getDocumentVersion());
         Assert.assertEquals("Reloading the final image", docDetailsPage.getCommentsOfLastCommit());
         Assert.assertEquals(true, docDetailsPage.isUploadNewVersionDisplayed());
@@ -188,7 +197,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
 
     /**
      * Test the function of add a like to a document
-     * 
+     *
      * @throws Exception
      */
     @Test(dependsOnMethods = "uploadFile")
@@ -199,7 +208,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====addLikeDislike====");
         }
-        DocumentDetailsPage docsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docsPage = resolvePage(driver).render();
         Assert.assertEquals("0", docsPage.getLikeCount());
         Assert.assertFalse(docsPage.isLiked());
         docsPage = docsPage.selectLike().render();
@@ -220,7 +229,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====favouriteUnfavourite====");
         }
-        DocumentDetailsPage docsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docsPage = resolvePage(driver).render();
         Assert.assertFalse(docsPage.isFavourite());
         Assert.assertNotNull(docsPage.getToolTipForFavourite());
         docsPage = docsPage.selectFavourite().render();
@@ -230,7 +239,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
     @Test(dependsOnMethods = "favouriteUnfavourite")
     public void getDocumentProperties()
     {
-        DocumentDetailsPage docDetailsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docDetailsPage = resolvePage(driver).render();
         Map<String, Object> properties = docDetailsPage.getProperties();
         Assert.assertNotNull(properties);
         Assert.assertEquals(properties.get("Name"), file.getName());
@@ -255,10 +264,10 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====addComments====");
         }
-        DocumentDetailsPage docsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docsPage = resolvePage(driver).render();
         Assert.assertEquals(docsPage.getCommentCount(), 0);
         docsPage = docsPage.addComment(COMMENT).render();
-        DocumentLibraryPage libPage = docsPage.getSiteNav().selectSiteDocumentLibrary().render();
+        DocumentLibraryPage libPage = docsPage.getSiteNav().selectDocumentLibrary().render();
         int commentCount = libPage.getCommentCount();
         Assert.assertEquals(commentCount, 1);
         docsPage = selectDocument(file).render();
@@ -276,10 +285,10 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====removeComment====");
         }
-        DocumentDetailsPage docsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docsPage = resolvePage(driver).render();
         Assert.assertEquals(docsPage.getCommentCount(), 1);
         docsPage.removeComment(COMMENT);
-        DocumentLibraryPage libPage = docsPage.getSiteNav().selectSiteDocumentLibrary().render();
+        DocumentLibraryPage libPage = docsPage.getSiteNav().selectDocumentLibrary().render();
         int commentCount = libPage.getCommentCount();
         Assert.assertEquals(commentCount, 0);
     }
@@ -302,7 +311,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
 
     /**
      * This test case needs flash player installed on linux box and till that it will be disabled. Test that selected document is previewed on detail page.
-     * 
+     *
      * @throws IOException
      */
     // TODO Disbaled since windows OS selenium node is used with grid
@@ -313,7 +322,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====testIsPreviewDisplayed====");
         }
-        DocumentDetailsPage docDetailsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docDetailsPage = resolvePage(driver).render();
         Assert.assertTrue(docDetailsPage.isFlashPreviewDisplayed());
     }
 
@@ -327,14 +336,14 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====deleteAnExistingFile====");
         }
-        DocumentDetailsPage docDetailsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docDetailsPage = resolvePage(driver).render();
         DocumentLibraryPage docLibPage = docDetailsPage.delete().render();
         Assert.assertFalse(docLibPage.isFileVisible(file.getName()));
     }
 
     /**
      * Test that selected document is not previewed on detail page
-     * 
+     *
      * @throws IOException
      */
     @Test(dependsOnMethods = "deleteAnExistingFile")
@@ -344,10 +353,10 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("====testIsNoPreviewMessageDisplayed====");
         }
-        SitePage site = drone.getCurrentPage().render();
-        DocumentLibraryPage docPage = site.getSiteNav().selectSiteDocumentLibrary().render();
+        SitePage site = resolvePage(driver).render();
+        DocumentLibraryPage docPage = site.getSiteNav().selectDocumentLibrary().render();
         UploadFilePage upLoadPage = docPage.getNavigation().selectFileUpload().render();
-        file = SiteUtil.prepareFile("UnkownFormat");
+        file = siteUtil.prepareFile("UnkownFormat");
         upLoadPage.uploadFile(file.getCanonicalPath()).render();
         DocumentDetailsPage docDetailsPage = selectDocument(file).render();
         EditDocumentPropertiesPage editPropertiesPage = docDetailsPage.selectEditProperties().render();
@@ -358,18 +367,15 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
 
     /**
      * Test that selected document is not previewed and download link should be present on detail page
-     * 
+     *
      * @throws IOException
      */
     @Test(dependsOnMethods = "testIsNoPreviewMessageDisplayed")
     public void testClickOnDownloadLinkForUnsupportedPreview() throws Exception
     {
-        if (!alfrescoVersion.isCloud())
-        {
-            DocumentDetailsPage page = drone.getCurrentPage().render();
-            DocumentDetailsPage docDetailsPage = page.clickOnDownloadLinkForUnsupportedDocument().render();
-            Assert.assertNotNull(docDetailsPage);
-        }
+        DocumentDetailsPage page = resolvePage(driver).render();
+        DocumentDetailsPage docDetailsPage = page.clickOnDownloadLinkForUnsupportedDocument().render();
+        Assert.assertNotNull(docDetailsPage);
     }
 
     /**
@@ -378,15 +384,8 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
     @Test(dependsOnMethods = "testClickOnDownloadLinkForUnsupportedPreview")
     public void testIsFileShared()
     {
-        DocumentDetailsPage page = drone.getCurrentPage().render();
-        if (alfrescoVersion.isCloud())
-        {
-            assertFalse(page.isSharePanePresent());
-        }
-        else
-        {
-            assertTrue(page.isSharePanePresent());
-        }
+        DocumentDetailsPage page = resolvePage(driver).render();
+        assertTrue(page.isSharePanePresent());
         assertFalse(page.isFileShared());
         ShareLinkPage shareLinkPage = page.clickShareLink().render();
         Assert.assertNotNull(shareLinkPage);
@@ -399,7 +398,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
     @Test(dependsOnMethods = "testIsFileShared")
     public void editOffline() throws IOException
     {
-        DocumentDetailsPage docDetailsPage = drone.getCurrentPage().render();
+        DocumentDetailsPage docDetailsPage = resolvePage(driver).render();
         if (logger.isTraceEnabled())
         {
             logger.trace("====editOffline====");
@@ -416,7 +415,7 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         updatePage.setComment("Reloading the file with correct image");
         updatePage.uploadFile(uploadFile.getCanonicalPath());
         updatePage.render();
-        docDetailsPage = updatePage.submit().render();
+        docDetailsPage = updatePage.submitUpload().render();
         if (logger.isTraceEnabled())
         {
             logger.trace("---upload submited----");
@@ -427,18 +426,67 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         {
             logger.trace("---update with major version----");
         }
-        docDetailsPage.getSiteNav().selectSiteDocumentLibrary().render();
+        docDetailsPage.getSiteNav().selectDocumentLibrary().render();
     }
 
     /**
+     * Test for Unzip to... link for zip file
+     */
+    @Test(dependsOnMethods = "editOffline")
+    public void unzipZipFileTo() throws Exception
+    {
+        DocumentLibraryPage docLibraryPage = resolvePage(driver).render();
+
+        File prepareZipFile = siteUtil.prepareZipFile(zipFile, ".zip");
+        UploadFilePage upLoadPage = docLibraryPage.getNavigation().selectFileUpload().render();
+        docLibraryPage = upLoadPage.uploadFile(prepareZipFile.getCanonicalPath()).render();
+        zipFilePrepared = prepareZipFile.getName();
+
+        DocumentDetailsPage docDetailsPage = docLibraryPage.selectFile(zipFilePrepared).render();
+        CopyOrMoveContentPage copyOrMoveContentPage = docDetailsPage.selectUnzipTo().render();
+        copyOrMoveContentPage.selectOkButton().render();
+
+        docLibraryPage = docDetailsPage.getSiteNav().selectDocumentLibrary().render();
+        Assert.assertTrue(docLibraryPage.isItemVisble(ZIPPED_TXT_FILE_NAME));
+
+    }
+
+
+    /**
+     * Test for Unzip to... link for acp file
+     */
+    @Test(dependsOnMethods = "unzipZipFileTo")
+    public void unzipAcpFileTo() throws Exception
+    {
+        DocumentLibraryPage docLibraryPage = resolvePage(driver).render();
+
+
+        File prepareAcpFile = siteUtil.prepareZipFile(acpFile, ".acp");
+
+        UploadFilePage upLoadPage = docLibraryPage.getNavigation().selectFileUpload().render();
+        docLibraryPage = upLoadPage.uploadFile(prepareAcpFile.getCanonicalPath()).render();
+        acpFilePrepared = prepareAcpFile.getName();
+
+        DocumentDetailsPage docDetailsPage = docLibraryPage.selectFile(acpFilePrepared).render();
+        CopyOrMoveContentPage copyOrMoveContentPage = docDetailsPage.selectUnzipTo().render();
+        copyOrMoveContentPage.selectOkButton().render();
+
+        docLibraryPage = docDetailsPage.getSiteNav().selectDocumentLibrary().render();
+        Assert.assertTrue(docLibraryPage.isItemVisble(ZIPPED_TXT_FILE_NAME));
+
+    }
+
+
+    /**
      * Test the function of get document body - the content of the document
-     * 
+     *
      * @throws Exception
      */
-    @Test(dependsOnMethods = "editOffline", groups="communityIssue")
+    //@Test(dependsOnMethods = "editOffline", groups = "communityIssue")
+    @Test(dependsOnMethods = "unzipAcpFileTo", groups = "communityIssue")
     public void getDocumentBody() throws Exception
     {
-        DocumentLibraryPage libraryPage = drone.getCurrentPage().render();
+        DocumentLibraryPage libraryPage = resolvePage(driver).render();
         CreatePlainTextContentPage contentPage = libraryPage.getNavigation().selectCreateContent(ContentType.PLAINTEXT).render();
         ContentDetails contentDetails = new ContentDetails();
         contentDetails.setName("Test Doc");
@@ -448,36 +496,37 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         contentDetails.setContent(content);
         DocumentDetailsPage detailsPage = contentPage.create(contentDetails).render();
         assertEquals(detailsPage.getDocumentBody(), content);
-        detailsPage.getSiteNav().selectSiteDocumentLibrary().render();
+        detailsPage.getSiteNav().selectDocumentLibrary().render();
     }
 
     /**
      * Test the function of view original document
-     * 
+     *
      * @throws Exception
      */
-    @Test(dependsOnMethods = "getDocumentBody",groups="communityIssue")
+    @Test(dependsOnMethods = "getDocumentBody", groups = "communityIssue")
     public void testViewOriginalDocument() throws Exception
     {
-        DocumentLibraryPage libraryPage = drone.getCurrentPage().render();
+        DocumentLibraryPage libraryPage = resolvePage(driver).render();
         libraryPage = libraryPage.getFileDirectoryInfo("Test Doc").selectEditOffline().render();
-        DocumentEditOfflinePage docEditPage = libraryPage.selectFile("Test Doc").render();
+        DocumentEditOfflinePage docEditPage = libraryPage.selectFileEditedOffline("Test Doc").render();
         assertTrue(docEditPage.isViewOriginalLinkPresent());
         DocumentDetailsPage docDetailsPage = docEditPage.selectViewOriginalDocument().render();
         assertFalse(docDetailsPage.isViewOriginalLinkPresent());
         assertTrue(docDetailsPage.isViewWorkingCopyDisplayed());
-        docDetailsPage.getSiteNav().selectSiteDocumentLibrary().render();
+        docDetailsPage.getSiteNav().selectDocumentLibrary().render();
     }
-    
+
     /**
      * Test the function of view original document
-     * 
+     *
      * @throws Exception
      */
-    @Test(dependsOnMethods = "testViewOriginalDocument",groups="communityIssue")
+     /**
+    @Test(dependsOnMethods = "testViewOriginalDocument", groups = "communityIssue")
     public void testGetCommentHtml() throws Exception
     {
-        DocumentLibraryPage libraryPage = drone.getCurrentPage().render();
+        DocumentLibraryPage libraryPage = resolvePage(driver).render();
         libraryPage = libraryPage.getFileDirectoryInfo("Test Doc").selectCancelEditing().render();
         DocumentDetailsPage docDetailsPage = libraryPage.selectFile("Test Doc").render();
         AddCommentForm addCommentForm = docDetailsPage.clickAddCommentButton();
@@ -487,4 +536,5 @@ public class DocumentDetailsPageTest extends AbstractDocumentTest
         String htmlComment = docDetailsPage.getCommentHTML("comment");
         assertFalse(htmlComment.isEmpty());
     }
+    **/
 }

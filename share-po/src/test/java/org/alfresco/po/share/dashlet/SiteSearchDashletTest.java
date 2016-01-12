@@ -61,7 +61,7 @@ public class SiteSearchDashletTest extends AbstractSiteDashletTest
     @Test
     public void instantiateDashlet()
     {
-        customiseSiteDashBoard = siteDashBoard.getSiteNav().selectCustomizeDashboard();
+        customiseSiteDashBoard = siteDashBoard.getSiteNav().selectCustomizeDashboard().render();;
         customiseSiteDashBoard.render();
         siteDashBoard = customiseSiteDashBoard.addDashlet(Dashlets.SITE_SEARCH, 1).render();
         searchDashlet = siteDashBoard.getDashlet(SITE_SEARCH).render();
@@ -69,24 +69,6 @@ public class SiteSearchDashletTest extends AbstractSiteDashletTest
     }
 
     @Test(dependsOnMethods="instantiateDashlet")
-    public void verifyHelpAndConfigureIcons() throws Exception
-    {
-        Assert.assertTrue(searchDashlet.isHelpIconDisplayed());
-    }
-
-    @Test(dependsOnMethods="verifyHelpAndConfigureIcons")
-    public void selectHelpIcon() throws Exception
-    {
-        searchDashlet.clickOnHelpIcon();
-        Assert.assertTrue(searchDashlet.isBalloonDisplayed());
-
-        String actualHelpBallonMsg = searchDashlet.getHelpBalloonMessage();
-        Assert.assertEquals(actualHelpBallonMsg, expectedHelpBallonMsg);
-        searchDashlet.closeHelpBallon().render();
-        Assert.assertFalse(searchDashlet.isBalloonDisplayed());
-    }
-    
-    @Test(dependsOnMethods="selectHelpIcon")
     public void getAvailableResultSizes()
     {
         Assert.assertEquals(searchDashlet.getAvailableResultSizes().size(), 4);

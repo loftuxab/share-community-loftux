@@ -14,12 +14,18 @@
  */
 package org.alfresco.po.share.site;
 
-import org.alfresco.po.share.AlfrescoVersion;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.alfresco.po.RenderElement.getVisibleRenderElement;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.alfresco.po.HtmlPage;
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.exception.PageException;
 import org.alfresco.po.share.SharePage;
 import org.alfresco.po.share.enums.UserRole;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.exception.PageException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openqa.selenium.By;
@@ -27,63 +33,87 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.alfresco.webdrone.RenderElement.getVisibleRenderElement;
-
 /**
  * The class represents the Members page and handles the members page
- * funcationality.
- *
+ * funcationality. Replaced by AddUsersToSitePage.
+ * 
+ * 
+ * TODO Jelena to update why this is not in use.
  * @author cbairaajoni
  * @version 1.6.1
  */
+@Deprecated
 public class InviteMembersPage extends SharePage
 {
 
     private static Log logger = LogFactory.getLog(InviteMembersPage.class);
+
+    // 1 - Search for People input field
     private static final String SEARCH_USER_ROLE_TEXT = "div.search-text>input";
+
+    // Search for People Search button
     private static final String SEARCH_USER_ROLE_BUTTON = "button[id*='default-search-button-button']";
     private static final String SEARCH_IS_IN_PROGRESS_BUTTON = "//button[contains(@id,'people-finder') and contains(@disabled,'disabled')]";
+
+    // List of users in search results (in 1 -Search for People Panel)
     private static final String LIST_OF_USERS = "div.results.yui-dt>table>tbody.yui-dt-data>tr";
+
+    // List of invitees in 2 - Invite Users panel
     private static final String LIST_OF_INVITEES = "div.body.inviteelist.yui-dt>table>tbody.yui-dt-data>tr";
+
+    // 2 -Invite Users panel + including ->
     private static final String INVITATION_LIST_PART = "div.invitationlistwrapper";
+
+    // 1 - Search for People panel + Add External Users
     private static final String USER_SEARCH_PART = ".yui-u.first";
+
+    // 2 -Invite Users panel - Select Role drop down values
     private static final String ROLES_DROP_DOWN_VALUES = "div[style*='visible']>div>div[style*='visible']>div.bd>ul>li";
+
+    // Invite button under 2 - Invite Users panel
     private static final String INVITE_BUTTON = "div.invitationlist+div.sinvite>span>span>button";
+
+    // Add user - 1 Search for People button -list of all buttons on the page ???
     private static final String BUTTON = "button[type=button]";
+
+    // 1 - Search for People panel - list of (user name) in search results - 1st
     private static final String INVITEE = "td>div.yui-dt-liner>h3>span";
+
+    // 2 -Invite Users panel - Select Role drop down button
     private static final String ROLES_DROP_DOWN_BUTTON = "div[style*='visible']>div>span>span>button";
+
+    // 1 - Search for People panel - list of (user name) in search results - 2nd
     private static final By SEARCH_USER_FROM_LIST = By.cssSelector("td+td>div.yui-dt-liner>h3>span.lighter");
+
+    // 1 - Search for People panel - list of (user name) in search results - 3rd (duplicates)
     private static final By SEACH_INVITEE_FROM_LIST = By.cssSelector("td+td>div.yui-dt-liner>h3>span.lighter");
+
+    // 1 - Search for People panel - list of (first last) in search results
     private static final By SEARCH_USER_RESULTS = By.cssSelector(".itemname>a");
+
+    // 2 -Invite Users panel - Set All Roles to button
     private static final By SELECT_ROLE_FOR_ALL = By.cssSelector("button[id$='selectallroles-button-button']");
+
+    // ...Add External Users: First Name input field
     private static final By EXTERNAL_FIRST_NAME_INPUT = By.xpath("//input[contains(@id,'default-firstname')]");
+
+    // ...Add External Users: Last Name input field
     private static final By EXTERNAL_LAST_NAME_INPUT = By.xpath("//input[contains(@id,'default-lastname')]");
+
+    // ...Add External Users: Email input field
     private static final By EXTERNAL_EMAIL_INPUT = By.xpath("//input[contains(@id,'default-email')]");
+
+    // ...Add External Users: Add button
     private static final By EXTERNAL_ADD_BUTTON = By.xpath("//button[contains(@id,'email-button-button')]");
 
     private static final String ADD_BUTTON_FOR_USER_XPATH = "//a[contains(text(),'%s')]/../../../..//button";
     private static final String SELECT_ROLE_BUTTON_FOR_USER_XPATH = "//div[contains(text(),'%s')]/../../..//button";
     private static final String REMOVE_USER_ICON_FOR_USER_XPATH = "//div[contains(text(),'%s')]/../../..//span[@class='removeIcon']/..";
 
-    private final By linkGroup;
-    private final By linkPeople;
-    private final By linkPendingInvites;
+    private final By linkGroup = By.cssSelector("a[id$='-site-groups-link']");
+    private final By linkPeople = By.cssSelector("a[id$='-site-members-link']");
+    private final By linkPendingInvites = By.cssSelector("a[id$='-pending-invites-link']");
 
-    /**
-     * Constructor.
-     */
-    public InviteMembersPage(WebDrone drone)
-    {
-        super(drone);
-        linkGroup = AlfrescoVersion.Enterprise41.equals(alfrescoVersion) ? By.linkText("Groups") : By.cssSelector("a[id$='-site-groups-link']");
-        linkPeople = AlfrescoVersion.Enterprise41.equals(alfrescoVersion) ? By.linkText("People") : By.cssSelector("a[id$='-site-members-link']");
-        linkPendingInvites = AlfrescoVersion.Enterprise41.equals(alfrescoVersion) ? By.linkText("Pending Invites") : By.cssSelector("a[id$='-pending-invites-link']");
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -96,14 +126,14 @@ public class InviteMembersPage extends SharePage
                 timer.start();
                 try
                 {
-                    drone.find(By.cssSelector(USER_SEARCH_PART));
-                    drone.find(By.cssSelector(INVITATION_LIST_PART));
-                    drone.find(By.cssSelector(SEARCH_USER_ROLE_TEXT));
-                    drone.find(By.cssSelector(SEARCH_USER_ROLE_BUTTON));
-                    drone.find(EXTERNAL_ADD_BUTTON);
-                    drone.find(EXTERNAL_EMAIL_INPUT);
-                    drone.find(EXTERNAL_FIRST_NAME_INPUT);
-                    drone.find(EXTERNAL_LAST_NAME_INPUT);
+                    driver.findElement(By.cssSelector(USER_SEARCH_PART));
+                    driver.findElement(By.cssSelector(INVITATION_LIST_PART));
+                    driver.findElement(By.cssSelector(SEARCH_USER_ROLE_TEXT));
+                    driver.findElement(By.cssSelector(SEARCH_USER_ROLE_BUTTON));
+                    driver.findElement(EXTERNAL_ADD_BUTTON);
+                    driver.findElement(EXTERNAL_EMAIL_INPUT);
+                    driver.findElement(EXTERNAL_FIRST_NAME_INPUT);
+                    driver.findElement(EXTERNAL_LAST_NAME_INPUT);
                     break;
                 }
                 catch (NoSuchElementException pe)
@@ -126,13 +156,6 @@ public class InviteMembersPage extends SharePage
         return render(new RenderTime(maxPageLoadingTime));
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public InviteMembersPage render(final long time)
-    {
-        return render(new RenderTime(time));
-    }
-
     public InviteMembersPage renderWithUserSearchResults(final long time)
     {
         return renderWithUserSearchResults(new RenderTime(time));
@@ -151,7 +174,7 @@ public class InviteMembersPage extends SharePage
 
     /**
      * Verify if home page banner web element is present
-     *
+     * 
      * @return true if exists
      */
     public boolean titlePresent()
@@ -168,10 +191,11 @@ public class InviteMembersPage extends SharePage
     /**
      * This method search for the given userName and returns the list of
      * results.
-     *
+     * 
      * @param userName String identifier
      * @return List<String> list of users
      */
+
     public List<String> searchUser(String userName)
     {
         if (logger.isTraceEnabled())
@@ -186,12 +210,12 @@ public class InviteMembersPage extends SharePage
 
         try
         {
-            WebElement searchTextBox = drone.findAndWait(By.cssSelector(SEARCH_USER_ROLE_TEXT));
+            WebElement searchTextBox = findAndWait(By.cssSelector(SEARCH_USER_ROLE_TEXT));
             searchTextBox.clear();
             searchTextBox.sendKeys(userName);
 
-            drone.findAndWait(By.cssSelector(SEARCH_USER_ROLE_BUTTON)).click();
-            drone.waitUntilElementDisappears(By.xpath(SEARCH_IS_IN_PROGRESS_BUTTON), 25);
+            findAndWait(By.cssSelector(SEARCH_USER_ROLE_BUTTON)).click();
+            waitUntilElementDisappears(By.xpath(SEARCH_IS_IN_PROGRESS_BUTTON), 25);
 
             List<WebElement> users = getListOfInvitees();
             if (users != null && !users.isEmpty())
@@ -217,11 +241,11 @@ public class InviteMembersPage extends SharePage
 
     /**
      * This method clicks on add button.
-     *
+     * 
      * @param user String user identifier
      * @return {@link InviteMembersPage} page response
      */
-    public InviteMembersPage clickAddUser(String user)
+    public HtmlPage clickAddUser(String user)
     {
         if (user == null || user.isEmpty())
         {
@@ -256,19 +280,20 @@ public class InviteMembersPage extends SharePage
             }
         }
 
-        return new InviteMembersPage(drone);
+        return getCurrentPage();
     }
 
     /**
      * This method gets the list of invitees present.
-     *
+     * 
      * @return List<WebElement>
      */
+
     private List<WebElement> getInvitees()
     {
         try
         {
-            return drone.findAndWaitForElements(By.cssSelector(LIST_OF_INVITEES));
+            return findAndWaitForElements(By.cssSelector(LIST_OF_INVITEES));
         }
         catch (TimeoutException e)
         {
@@ -283,12 +308,12 @@ public class InviteMembersPage extends SharePage
 
     /**
      * This method returns the selected invitee based on the given user element.
-     *
+     * 
      * @param user String identifier
      * @param role UserRole
      * @return InviteMembersPage page response
      */
-    public InviteMembersPage selectInviteeAndAssignRole(String user, UserRole role)
+    public HtmlPage selectInviteeAndAssignRole(String user, UserRole role)
     {
         List<WebElement> inviteesList = getInvitees();
         if (user == null || inviteesList == null || inviteesList.isEmpty() || role == null)
@@ -319,7 +344,7 @@ public class InviteMembersPage extends SharePage
                 }
             }
         }
-        return new InviteMembersPage(drone);
+        return getCurrentPage();
     }
 
     /**
@@ -327,26 +352,26 @@ public class InviteMembersPage extends SharePage
      */
     private void selectRolesDropdown()
     {
-        drone.findAndWait(By.cssSelector(ROLES_DROP_DOWN_BUTTON)).click();
+        findAndWait(By.cssSelector(ROLES_DROP_DOWN_BUTTON)).click();
     }
 
     /**
      * The filters of the Site content those are diplayed in filters dropdown.
-     *
+     * 
      * @return <List<WebElement>>
      */
     private List<WebElement> getRoles()
     {
-        return drone.findAndWaitForElements(By.cssSelector(ROLES_DROP_DOWN_VALUES), maxPageLoadingTime);
+        return findAndWaitForElements(By.cssSelector(ROLES_DROP_DOWN_VALUES), maxPageLoadingTime);
     }
 
     /**
      * This method assigns role from dropdown values.
-     *
+     * 
      * @param roleName {@link UserRole}
      * @return {@link InviteMembersPage}
      */
-    private InviteMembersPage assignRole(UserRole roleName)
+    private HtmlPage assignRole(UserRole roleName)
     {
         if (roleName == null)
         {
@@ -359,46 +384,46 @@ public class InviteMembersPage extends SharePage
                 role.click();
             }
         }
-        return new InviteMembersPage(drone);
+        return getCurrentPage();
     }
 
     /**
      * This method clicks on Invite button on Invite user page.
-     *
+     * 
      * @return {@link InviteMembersPage} page response
      */
-    public InviteMembersPage clickInviteButton()
+    public HtmlPage clickInviteButton()
     {
-        drone.findAndWait(By.cssSelector(INVITE_BUTTON), maxPageLoadingTime).click();
+        findAndWait(By.cssSelector(INVITE_BUTTON), maxPageLoadingTime).click();
         waitUntilAlert();
-        return new InviteMembersPage(drone).render();
+        return getCurrentPage();
     }
 
     /**
      * This method does the inviting user and assigning the new role as given
      * role value.
-     *
+     * 
      * @param user String identifier
      * @param role {@link UserRole}
      * @return {@link InviteMembersPage}
      */
-    public InviteMembersPage selectRole(String user, UserRole role)
+    public HtmlPage selectRole(String user, UserRole role)
     {
         clickAddUser(user);
         selectInviteeAndAssignRole(user, role);
-        return new InviteMembersPage(drone);
+        return getCurrentPage();
     }
 
     /**
      * Get List of users who are invited.
-     *
+     * 
      * @return List<WebElement> Collection of invited users
      */
     private List<WebElement> getListOfInvitees()
     {
         try
         {
-            return drone.findAndWaitForElements(By.cssSelector(LIST_OF_USERS));
+            return findAndWaitForElements(By.cssSelector(LIST_OF_USERS));
         }
         catch (TimeoutException e)
         {
@@ -409,15 +434,15 @@ public class InviteMembersPage extends SharePage
 
     /**
      * Navigate to Site Groups.
-     *
+     * 
      * @return SiteGroupsPage
      */
-    public SiteGroupsPage navigateToSiteGroupsPage()
+    public HtmlPage navigateToSiteGroupsPage()
     {
         try
         {
             click(linkGroup);
-            return drone.getCurrentPage().render();
+            return getCurrentPage();
         }
         catch (NoSuchElementException nse)
         {
@@ -428,7 +453,7 @@ public class InviteMembersPage extends SharePage
     public void removeUserFromInvite(String userName)
     {
         By removeUsers = By.xpath(String.format(REMOVE_USER_ICON_FOR_USER_XPATH, userName));
-        drone.findAndWait(removeUsers).click();
+        findAndWait(removeUsers).click();
     }
 
     /**
@@ -436,13 +461,13 @@ public class InviteMembersPage extends SharePage
      */
     public void selectRoleForAll(UserRole role)
     {
-        drone.findAndWait(SELECT_ROLE_FOR_ALL).click();
-        drone.findAndWait(By.xpath(String.format("//a[contains(text(),'%s')]", role.getRoleName()))).click();
+        findAndWait(SELECT_ROLE_FOR_ALL).click();
+        findAndWait(By.xpath(String.format("//a[contains(text(),'%s')]", role.getRoleName()))).click();
     }
 
     /**
      * true if 'Add' button displayed and enabled for user.
-     *
+     * 
      * @param userName String
      * @return boolean
      */
@@ -458,7 +483,7 @@ public class InviteMembersPage extends SharePage
     {
         try
         {
-            WebElement inviteButton = drone.find(By.cssSelector(INVITE_BUTTON));
+            WebElement inviteButton = driver.findElement(By.cssSelector(INVITE_BUTTON));
             return inviteButton.isDisplayed() && inviteButton.isEnabled();
         }
         catch (NoSuchElementException e)
@@ -469,7 +494,7 @@ public class InviteMembersPage extends SharePage
 
     /**
      * true if 'SelectRole' button displayed and enabled for user.
-     *
+     * 
      * @param userName String
      * @return boolean
      */
@@ -480,7 +505,7 @@ public class InviteMembersPage extends SharePage
 
     /**
      * true if 'Remove Icon' image displayed and enabled for user.
-     *
+     * 
      * @param userName String
      * @return boolean
      */
@@ -491,15 +516,15 @@ public class InviteMembersPage extends SharePage
 
     /**
      * Mimic click on People link
-     *
+     * 
      * @return SiteMembersPage
      */
-    public SiteMembersPage navigateToMembersSitePage()
+    public HtmlPage navigateToMembersSitePage()
     {
         try
         {
             click(linkPeople);
-            return drone.getCurrentPage().render();
+            return getCurrentPage();
         }
         catch (NoSuchElementException nse)
         {
@@ -509,15 +534,15 @@ public class InviteMembersPage extends SharePage
 
     /**
      * Mimic click on Pending Invites link
-     *
+     * 
      * @return PendingInvitesPage
      */
-    public PendingInvitesPage navigateToPendingInvitesPage()
+    public HtmlPage navigateToPendingInvitesPage()
     {
         try
         {
             click(linkPendingInvites);
-            return drone.getCurrentPage().render();
+            return getCurrentPage();
         }
         catch (NoSuchElementException nse)
         {
@@ -527,12 +552,13 @@ public class InviteMembersPage extends SharePage
 
     /**
      * Send external invitation to email for some user
-     *
+     * 
      * @param firstName String
      * @param lastName String
      * @param email String
      * @param userRole UserRole
      */
+
     public void invExternalUser(String firstName, String lastName, String email, UserRole userRole)
     {
         fillField(EXTERNAL_FIRST_NAME_INPUT, firstName);
@@ -548,7 +574,7 @@ public class InviteMembersPage extends SharePage
         By smthElement = By.xpath(String.format(smthXpath, userName));
         try
         {
-            WebElement addButton = drone.find(smthElement);
+            WebElement addButton = driver.findElement(smthElement);
             return addButton.isDisplayed() && addButton.isEnabled();
         }
         catch (NoSuchElementException e)
@@ -560,14 +586,14 @@ public class InviteMembersPage extends SharePage
     private void click(By locator)
     {
         checkNotNull(locator);
-        WebElement element = drone.findAndWait(locator);
+        WebElement element = findAndWait(locator);
         element.click();
     }
 
     private void fillField(By selector, String text)
     {
         checkNotNull(text);
-        WebElement inputField = drone.findAndWait(selector);
+        WebElement inputField = findAndWait(selector);
         inputField.clear();
         inputField.sendKeys(text);
     }

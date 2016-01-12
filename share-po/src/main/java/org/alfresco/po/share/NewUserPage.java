@@ -14,12 +14,12 @@
  */
 package org.alfresco.po.share;
 
-import org.alfresco.webdrone.ElementState;
-import org.alfresco.webdrone.HtmlPage;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.exception.PageException;
-import org.alfresco.webdrone.exception.PageOperationException;
+import java.util.List;
+
+import org.alfresco.po.HtmlPage;
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.exception.PageException;
+import org.alfresco.po.exception.PageOperationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,8 +27,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
-import java.util.List;
+import ru.yandex.qatools.htmlelements.element.Button;
 
 /**
  * New User page object, holds all element of the html page relating to
@@ -49,7 +50,7 @@ public class NewUserPage extends SharePage
     private static final String GROUP_FINDER_SEARCH_TEXT = "input[id$='admin-console_x0023_default-create-groupfinder-search-text']";
 
     private static final String GROUP_SEARCH_BUTTON = "button[id$='default-create-groupfinder-group-search-button-button']";
-    private static final String CREATE_USER = "button[id$='default-createuser-ok-button-button']";
+    
     private static final String CREATE_ANOTHER_USER = "button[id$='default-createuser-another-button-button']";
     private static final String CANCEL_CREATE_USER = "button[id$='default-createuser-cancel-button-button']";
 
@@ -59,15 +60,6 @@ public class NewUserPage extends SharePage
     private static final String ROW_GROUP_NAME = "td[class*='yui-dt-col-description'] div h3.itemname";
     private static final String GROUP_NAME = "td[class*='yui-dt-col-actions'] div span button";
 
-    /**
-     * Constructor.
-     *
-     * @param drone WebDriver to access page
-     */
-    public NewUserPage(WebDrone drone)
-    {
-        super(drone);
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -103,13 +95,6 @@ public class NewUserPage extends SharePage
         return render(new RenderTime(maxPageLoadingTime));
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public NewUserPage render(final long time)
-    {
-        return render(new RenderTime(time));
-    }
-
     /**
      * Verify if admin Console title is present on the page
      *
@@ -125,7 +110,7 @@ public class NewUserPage extends SharePage
      */
     public void inputFirstName(String text)
     {
-        WebElement input = drone.findAndWait(By.cssSelector(FIRSTNAME));
+        WebElement input = findAndWait(By.cssSelector(FIRSTNAME));
         input.clear();
         input.sendKeys(text);
     }
@@ -135,7 +120,7 @@ public class NewUserPage extends SharePage
      */
     public void inputLastName(String text)
     {
-        WebElement input = drone.findAndWait(By.cssSelector(LASTNAME));
+        WebElement input = findAndWait(By.cssSelector(LASTNAME));
         input.clear();
         input.sendKeys(text);
     }
@@ -145,7 +130,7 @@ public class NewUserPage extends SharePage
      */
     public void inputEmail(String text)
     {
-        WebElement input = drone.findAndWait(By.cssSelector(EMAIL));
+        WebElement input = findAndWait(By.cssSelector(EMAIL));
         input.clear();
         input.sendKeys(text);
     }
@@ -155,7 +140,7 @@ public class NewUserPage extends SharePage
      */
     public void inputUsername(String text)
     {
-        WebElement input = drone.findAndWait(By.cssSelector(USERNAME));
+        WebElement input = findAndWait(By.cssSelector(USERNAME));
         input.clear();
         input.sendKeys(text);
     }
@@ -165,7 +150,7 @@ public class NewUserPage extends SharePage
      */
     public void inputPassword(String text)
     {
-        WebElement input = drone.findAndWait(By.cssSelector(PASSWORD));
+        WebElement input = findAndWait(By.cssSelector(PASSWORD));
         input.clear();
         input.sendKeys(text);
     }
@@ -175,7 +160,7 @@ public class NewUserPage extends SharePage
      */
     public void inputVerifyPassword(String text)
     {
-        WebElement input = drone.findAndWait(By.cssSelector(VERIFY_PASSWORD));
+        WebElement input = findAndWait(By.cssSelector(VERIFY_PASSWORD));
         input.clear();
         input.sendKeys(text);
     }
@@ -185,7 +170,7 @@ public class NewUserPage extends SharePage
      */
     public void inputQuota(String text)
     {
-        WebElement input = drone.findAndWait(By.cssSelector(USER_QUOTA));
+        WebElement input = findAndWait(By.cssSelector(USER_QUOTA));
         input.clear();
         input.sendKeys(text);
     }
@@ -196,20 +181,20 @@ public class NewUserPage extends SharePage
      * @param user String name
      * @return UserSearchPage page response
      */
-    public NewUserPage searchGroup(final String user)
+    public HtmlPage searchGroup(final String user)
     {
         try
         {
-            WebElement input = drone.findAndWait(By.cssSelector(GROUP_FINDER_SEARCH_TEXT));
+            WebElement input = findAndWait(By.cssSelector(GROUP_FINDER_SEARCH_TEXT));
             input.clear();
             input.sendKeys(user);
-            WebElement searchButton = drone.findAndWait(By.cssSelector(GROUP_SEARCH_BUTTON));
+            WebElement searchButton = findAndWait(By.cssSelector(GROUP_SEARCH_BUTTON));
             searchButton.click();
             if (searchButton.isEnabled())
             {
                  searchButton.click();
             }
-            return new NewUserPage(drone);
+            return getCurrentPage();
         }
         catch (TimeoutException e)
         {
@@ -227,7 +212,7 @@ public class NewUserPage extends SharePage
         boolean groupsFrameLoaded = false;
         try
         {
-            WebElement element = drone.find(By.cssSelector(GROUP_SEARCH_BUTTON));
+            WebElement element = driver.findElement(By.cssSelector(GROUP_SEARCH_BUTTON));
             groupsFrameLoaded = element.isDisplayed();
         }
         catch (NoSuchElementException te)
@@ -236,6 +221,7 @@ public class NewUserPage extends SharePage
         return groupsFrameLoaded;
     }
 
+    @FindBy(css="button[id$='default-createuser-ok-button-button']") Button createUser;
     /**
      * Clicks on Create User Button.
      * To get the error page there is wait added to delete disappear so it may not find the exact time taken to execute method,
@@ -245,7 +231,9 @@ public class NewUserPage extends SharePage
      */
     public HtmlPage selectCreateUser()
     {
-        return submit(By.cssSelector(CREATE_USER), ElementState.INVISIBLE);
+        createUser.click();
+        waitUntilAlert();
+        return getCurrentPage();
     }
 
     /**
@@ -253,13 +241,13 @@ public class NewUserPage extends SharePage
      *
      * @return NewUserPage
      */
-    public NewUserPage selectCreateAnotherUser()
+    public HtmlPage selectCreateAnotherUser()
     {
         try
         {
-            WebElement newUserButton = drone.find(By.cssSelector(CREATE_ANOTHER_USER));
+            WebElement newUserButton = driver.findElement(By.cssSelector(CREATE_ANOTHER_USER));
             newUserButton.click();
-            return new NewUserPage(drone);
+            return getCurrentPage();
         }
         catch (NoSuchElementException te)
         {
@@ -272,13 +260,13 @@ public class NewUserPage extends SharePage
      *
      * @return UserSearchPage
      */
-    public UserSearchPage cancelCreateUser()
+    public HtmlPage cancelCreateUser()
     {
         try
         {
-            WebElement element = drone.findAndWait(By.cssSelector(CANCEL_CREATE_USER));
+            WebElement element = findAndWait(By.cssSelector(CANCEL_CREATE_USER));
             element.click();
-            return new UserSearchPage(drone);
+            return getCurrentPage();
         }
         catch (TimeoutException te)
         {
@@ -293,7 +281,7 @@ public class NewUserPage extends SharePage
     {
         try
         {
-            WebElement selectDisableAccount = drone.find(By.cssSelector(DISABLE_ACCOUNT));
+            WebElement selectDisableAccount = driver.findElement(By.cssSelector(DISABLE_ACCOUNT));
             if (!selectDisableAccount.isSelected())
             {
                 selectDisableAccount.click();
@@ -360,7 +348,7 @@ public class NewUserPage extends SharePage
      * @param groupName String
      * @return HtmlPage
      */
-    public synchronized HtmlPage createEnterpriseUserWithGroup(String userName, String fname, String lname, String userEmail, String password, String groupName)
+    public HtmlPage createEnterpriseUserWithGroup(String userName, String fname, String lname, String userEmail, String password, String groupName)
     {
         if (groupName == null)
         {
@@ -384,17 +372,13 @@ public class NewUserPage extends SharePage
      */
     private boolean addGroup(String groupName)
     {
-        if (alfrescoVersion.isCloud())
-        {
-            throw new UnsupportedOperationException("This function is not for CLOUD!!");
-        }
         if (StringUtils.isEmpty(groupName))
         {
             throw new IllegalArgumentException("Group Name can't be empty or null");
         }
         try
         {
-            List<WebElement> webElements = drone.findAndWaitForElements(By.cssSelector(TABLE_GROUP_NAMES));
+            List<WebElement> webElements = findAndWaitForElements(By.cssSelector(TABLE_GROUP_NAMES));
             boolean isAdded = false;
 
             for (WebElement webElement : webElements)

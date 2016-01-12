@@ -79,12 +79,10 @@
       <uri-templates>
 
          <!--  This is intended for use with remotely created pages -->
-         <uri-template id="remote-node-page">/{pageid}/p/{pagename}/{store_type}/{store_id}/{id}</uri-template>
          <uri-template id="remote-site-page">/site/{site}/{pageid}/p/{pagename}</uri-template>
          <uri-template id="remote-page">/{pageid}/p/{pagename}</uri-template>
 
          <!-- This needs to go BEFORE "sitepage" -->
-         <uri-template id="share-site-page">/{pageid}/ws/{webscript}/{store_type}/{store_id}/{id}</uri-template>
          <uri-template id="share-site-page">/site/{site}/{pageid}/ws/{webscript}</uri-template>
 
          <uri-template id="sitedashboardpage">/site/{site}/dashboard</uri-template>
@@ -111,6 +109,10 @@
          <page id="links">links</page>
          <page id="data-lists">data-lists</page>
       </pages>
+      <!-- Pages not listed in navigation -->
+      <additional-pages>
+        <add-users>add-users</add-users>
+      </additional-pages>
    </config>
 
    <config evaluator="string-compare" condition="Users">
@@ -118,7 +120,10 @@
          <!-- minimum length for username and password -->
          <username-min-length>2</username-min-length>
          <password-min-length>3</password-min-length>
+         <show-authorization-status>false</show-authorization-status>
       </users>
+      <!-- This enables/disables the Add External Users Panel on the Add Users page. -->
+      <enable-external-users-panel>false</enable-external-users-panel>
    </config>
 
    <config evaluator="string-compare" condition="Notifications">
@@ -152,6 +157,9 @@
 
          <!-- default maximum number of results for a search -->
          <max-search-results>250</max-search-results>
+
+         <!-- default maximum number of results for user search -->
+         <max-users-search-results>20</max-users-search-results>
 
          <!-- Repository search configuration option -->
          <!--
@@ -247,6 +255,7 @@
          <workflow name="jbpm$imwf:invitation-moderated"/>
          <workflow name="activiti$activitiInvitationModerated"/>
          <workflow name="activiti$activitiInvitationNominated"/>
+         <workflow name="activiti$activitiInvitationNominatedAddDirect"/>
       </hidden-workflows>
 
       <!-- A list of workflow tasks that are NOT displayed in Share  -->

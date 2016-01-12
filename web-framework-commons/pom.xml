@@ -151,7 +151,7 @@
                     <target>
                         <copy todir="${project.build.outputDirectory}">
                             <fileset dir="${basedir}/src/main/resources" includes="alfresco/**/*.properties" />
-                            <mapper type="regexp" from="^([^_]*).properties$" to="\1_en.properties"/>
+                            <mapper type="regexp" from="^([^_]*).properties$" to="\1_en.properties" />
                         </copy>
                     </target>
                 </configuration>

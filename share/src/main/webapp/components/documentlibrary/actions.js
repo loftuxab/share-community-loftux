@@ -117,9 +117,9 @@
            iconStyle = 'style="background-image:url(' + urlContext + '{icon}-16.png)" ',
            actionTypeMarkup =
            {
-              "link": '<div class="{id}"><a title="{label}" class="simple-link" href="{href}" ' + iconStyle + '{target}><span>{label}</span></a></div>',
-              "pagelink": '<div class="{id}"><a title="{label}" class="simple-link" href="{pageUrl}" ' + iconStyle + '><span>{label}</span></a></div>',
-              "javascript": '<div class="{id}" id="{jsfunction}"><a title="{label}" class="action-link" href="#"' + iconStyle + '><span>{label}</span></a></div>'
+              "link": '<div class="{id}{additionalCssClasses}"><a title="{label}" class="simple-link" href="{href}" ' + iconStyle + '{target}><span>{label}</span></a></div>',
+              "pagelink": '<div class="{id}{additionalCssClasses}"><a title="{label}" class="simple-link" href="{pageUrl}" ' + iconStyle + '><span>{label}</span></a></div>',
+              "javascript": '<div class="{id}{additionalCssClasses}" id="{jsfunction}"><a title="{label}" class="action-link" href="#"' + iconStyle + '><span>{label}</span></a></div>'
            };
 
          // Store quick look-up for client-side actions
@@ -129,8 +129,14 @@
          {
             "id": p_action.id,
             "icon": p_action.icon,
-            "label": $html(Alfresco.util.substituteDotNotation(this.msg(p_action.label), p_record))
+            "label": $html(Alfresco.util.substituteDotNotation(this.msg(p_action.label), p_record)),
+            "additionalCssClasses" : p_action.additionalCssClasses ? " " + p_action.additionalCssClasses : ""
          };
+         
+         if (p_action.lastActionInSubgroup)
+         {
+            markupParams.additionalCssClasses = " alf-action-group-end";
+         }
 
          // Parameter substitution for each action type
          if (p_action.type === "link")
@@ -241,8 +247,9 @@
        */
       getAction: function dlA_getAction(record, owner, resolve)
       {
-         var actionId = owner.className,
-            action = Alfresco.util.findInArray(record.actions, actionId, "id") || {};
+         // Sets the actionId to the first class name rather than the full class name which can include additional classes
+         var actionId = owner.className.match(/([^\s])*/)[0];
+         var action = Alfresco.util.findInArray(record.actions, actionId, "id") || {};
 
          if (resolve === false)
          {
@@ -352,6 +359,7 @@
          editDetails.setOptions(
          {
             width: "auto",
+            zIndex: 1001, // This needs to be high so it works in full screen mode
             templateUrl: templateUrl,
             actionUrl: null,
             destroyOnHide: true,
@@ -449,10 +457,12 @@
          if (jsNode.isLink)
          {
              file = $isValueSet(jsNode.linkedNode.properties) ? jsNode.linkedNode.properties.name : null;
-             Alfresco.util.PopupManager.displayMessage(
-             {
-                text: this.msg("message.actions.failure.locate")
-             });
+             if(file === null) {
+                Alfresco.util.PopupManager.displayMessage(
+                {
+                   text: this.msg("message.actions.failure.locate")
+                });
+             }
          }
          else
          {
@@ -549,6 +559,7 @@
          if (jsNode.hasAspect("sync:syncSetMemberNode"))
          {
             displayPromptText += this.msg("actions.synced.remove-sync");
+            // The code further on down assumes that the unsync button is first
             buttons.unshift({
                text: this.msg("button.unsync"),
                handler: function dlA_onActionCloudUnsync_unsync()
@@ -564,6 +575,12 @@
                         successCallback:{
                            fn: function cloudSync_onCloudUnsync_success()
                            {
+                           
+                              // MNT-15233: Delete Document pop-up isn't closed after Remove sync action is performed
+                              var displayPrompt = Dom.get('prompt');
+                              var buttonUnsync = displayPrompt.getElementsByTagName('button')[0];
+                              buttonUnsync.style.display = 'none';
+                              
                               YAHOO.Bubbling.fire("metadataRefresh");
                               Alfresco.util.PopupManager.displayMessage(
                               {
@@ -1097,6 +1114,77 @@
        */
       onActionEditOnlineAos: function dlA_onActionEditOnlineAos(record)
       {
+          var internalEditOnlineAos = function dlA_internalEditOnlineAos(response)
+          {
+              var jsonNode = JSON.parse(response.serverResponse.responseText);
+              if (jsonNode)
+              {
+                  var node = jsonNode.item.node;
+                  if (node.isLocked)
+                  {
+                      var checkedOut = Alfresco.util.arrayContains(node.aspects,"cm:checkedOut");
+                      var lockOwner = node.properties["cm:lockOwner"]; 
+                      var differentLockOwner = lockOwner.userName !== Alfresco.constants.USERNAME;
+
+                      // If locked for offline editing, ask for user's confirmation to continue with online editing
+                      if (checkedOut && differentLockOwner)
+                      { 
+                          this._onAlreadyLockedConfirmation(record, lockOwner);
+                      }
+                      else
+                      {
+                          this._triggerEditOnlineAos(record);
+                      }
+                  }
+                  else
+                  {
+                      this._triggerEditOnlineAos(record);
+                  }
+              }
+          };
+          
+          // Populate the node details before triggering the action, in case the isLocked state changed
+          Alfresco.util.Ajax.request(
+          {
+              url: Alfresco.constants.PROXY_URI + "slingshot/doclib2/node/"  + record.nodeRef.replace('://', '/'),
+              successCallback:
+              {
+                  fn: internalEditOnlineAos,
+                  scope: this
+              }
+          });
+      },
+      
+      _onAlreadyLockedConfirmation: function dlA_onAlreadyLockedConfirmation(record, lockOwner)
+      {
+          var me = this;
+          Alfresco.util.PopupManager.displayPrompt(
+          {
+              title: this.msg('message.edit-online-aos.edit_offline_locked.title', lockOwner.displayName.length > 0 ? lockOwner.displayName : lockOwner.userName ),
+              text: this.msg('message.edit-online-aos.edit_offline_locked.message'),
+              buttons: [
+                  {
+                      text: this.msg('message.edit-online-aos.edit_offline_locked.confirm'),
+                      handler: function dlA_onAlreadyLockedConfirmation_confirm()
+                      {
+                          this.destroy();
+                          me._triggerEditOnlineAos(record);
+                      }
+                  },
+                  {
+                      text: this.msg('message.edit-online-aos.edit_offline_locked.cancel'),
+                      handler: function dlA_onAlreadyLockedConfirmation_cancel()
+                      {
+                          this.destroy();
+                      },
+                      isDefault: true
+                  }
+              ]
+          });
+      },
+      
+      _triggerEditOnlineAos: function dlA_triggerEditOnlineAos(record)
+      {
          if (!$isValueSet(record.onlineEditUrlAos))
          {
             record.onlineEditUrlAos = Alfresco.util.onlineEditUrlAos(this.doclistMetadata.custom.aos, record);
@@ -1246,6 +1334,7 @@
           input.onblur = function() {
               protocolHandlerPresent = true;
           };
+          input.context = this;
           location.href = protocolUrl;
           setTimeout(function()
           {
@@ -1255,7 +1344,7 @@
               {
                   Alfresco.util.PopupManager.displayMessage(
                   {
-                      text: this.msg('message.edit-online-aos.supported_office_version_required')
+                      text: input.context.msg('message.edit-online-aos.supported_office_version_required')
                   });
               }
           }, 500);
@@ -1337,7 +1426,7 @@
          // Get action params
          var params = this.getAction(record, owner).params,
             displayName = record.displayName,
-            namedParams = ["function", "action", "success", "successMessage", "failure", "failureMessage"],
+            namedParams = ["function", "action", "success", "successMessage", "failure", "failureMessage", "async"],
             repoActionParams = {};
 
          for (var name in params)
@@ -1351,6 +1440,8 @@
          //Deactivate action
          var ownerTitle = owner.title;
          owner.title = owner.title + "_deactivated";
+
+         var async = params.async ? "async=" + params.async : null;
 
          // Prepare genericAction config
          var config =
@@ -1376,7 +1467,8 @@
             {
                method: Alfresco.util.Ajax.POST,
                stem: Alfresco.constants.PROXY_URI + "api/",
-               name: "actionQueue"
+               name: "actionQueue",
+               queryString: async
             },
             config:
             {
@@ -1765,6 +1857,17 @@
       {
          this._copyMoveTo("move", record);
       },
+      
+      /**
+       * Unzip a single archive.
+       *
+       * @method onActionUnzipTo
+       * @param record {object} Object literal representing the archive to be actioned
+       */
+      onActionUnzipTo: function dlA_onActionUnzipTo(record)
+      {
+         this._copyMoveTo("unzip", record);
+      },
 
       /**
        * Copy/Move To implementation.
@@ -1780,7 +1883,8 @@
          if (!mode in
             {
                copy: true,
-               move: true
+               move: true,
+               unzip: true
             })
          {
             throw new Error("'" + mode + "' is not a valid Copy/Move to mode.");
@@ -1806,7 +1910,7 @@
             allowedViewModes.push(DLGF.VIEW_MODE_REPOSITORY);
          }
 
-         allowedViewModes.push(DLGF.VIEW_MODE_USERHOME)
+         allowedViewModes.push(DLGF.VIEW_MODE_USERHOME);
 
          var zIndex = 0;
          if (this.fullscreen !== undefined && ( this.fullscreen.isWindowOnly || Dom.hasClass(this.id, 'alf-fullscreen')))
@@ -1890,6 +1994,65 @@
             path: this.currentPath,
             files: record
          }).showDialog();
+      },
+      
+      /**
+       * Take Ownership.
+       *
+       * @method onActionTakeOwnership
+       * @param record {object} Object literal representing the file or folder to be actioned
+       */
+      onActionTakeOwnership: function dlA_onActionTakeOwnership(record, owner)
+      {
+         var me = this,
+            jsNode = record.jsNode,
+            content = jsNode.isContainer ? "folder" : "document",
+            displayName = record.displayName,
+            zIndex = 0;
+
+         var displayPromptText = this.msg("message.confirm.take-ownership", displayName);
+
+         if (this.fullscreen !== undefined && ( this.fullscreen.isWindowOnly || Dom.hasClass(this.id, 'alf-fullscreen')))
+         {
+            zIndex = 1000;
+         }
+
+         //MNT-11084 : Full screen/window view: Actions works incorrectly;
+         var parent = undefined;
+         var container = Dom.get(this.id);
+         var ua = navigator.userAgent.toLowerCase();
+         if ((ua.indexOf('gecko') != -1 || ua.indexOf('safari')!=-1) && ua.indexOf('chrome')==-1)
+         {
+            parent = container;
+         }
+       
+         var buttons =
+         [
+            {
+               text: this.msg("button.take-ownership"),
+               handler: function dlA_onActionTakeOwnership_confirm()
+               {
+                  this.destroy();
+                  me.onActionSimpleRepoAction.call(me, record, owner);
+               }
+            },
+            {
+               text: this.msg("button.cancel"),
+               handler: function dlA_onActionTakeOwnership_cancel()
+               {
+                  this.destroy();
+               },
+               isDefault: true
+            }
+         ];
+         
+         Alfresco.util.PopupManager.displayPrompt(
+         {
+            title: this.msg("message.confirm.take-ownership.title"),
+            text: displayPromptText,
+            noEscape: true,
+            buttons: buttons
+         });
       },
 
       /**
@@ -2015,53 +2178,45 @@
        */
       onActionCloudSync: function dlA_onActionCloudSync(record)
       {
-         // Instantiate Cloud Folder Picker & Cloud Auth Dialogue if they don't exist
-         if (!cloudFolderPicker)
+         // MNT-15212 : If the Cloud Folder Picker was initialized before delete it 
+         if(cloudFolderPicker)
          {
-            cloudFolderPicker = new Alfresco.module.DoclibCloudFolder(this.id + "-cloud-folder");
+               cloudFolderPicker.destroy();
+         }
 
-            var me = this;
+         // Instantiate Cloud Folder Picker & Cloud Auth Dialogue
+         cloudFolderPicker = new Alfresco.module.DoclibCloudFolder(this.id + "-cloud-folder");
 
-            // Set up handler for when the sync location has been chosen:
-            YAHOO.Bubbling.on("folderSelected", function cloudSync_onCloudFolderSelected(event, args)
+         var me = this;
+
+         // Set up handler for when the sync location has been chosen:
+         YAHOO.Bubbling.on("folderSelected", function cloudSync_onCloudFolderSelected(event, args)
+         {
+            this.updateSyncOptions();
+
+            Alfresco.util.Ajax.jsonPost(
             {
-               this.updateSyncOptions();
-
-               Alfresco.util.Ajax.jsonPost(
+               url: Alfresco.constants.PROXY_URI + "enterprise/sync/syncsetdefinitions",
+               dataObj: YAHOO.lang.merge(this.options.syncOptions,
                {
-                  url: Alfresco.constants.PROXY_URI + "enterprise/sync/syncsetdefinitions",
-                  dataObj: YAHOO.lang.merge(this.options.syncOptions,
+                  memberNodeRefs: me.getMemberNodeRefs(this.options.files),
+                  remoteTenantId: this.options.targetNetwork,
+                  targetFolderNodeRef: args[1].selectedFolder.nodeRef
+               }),
+               successCallback: {
+                  fn: function cloudSync_onCloudFolderSelectedSuccess()
                   {
-                     memberNodeRefs: me.getMemberNodeRefs(this.options.files),
-                     remoteTenantId: this.options.targetNetwork,
-                     targetFolderNodeRef: args[1].selectedFolder.nodeRef
-                  }),
-                  successCallback: {
-                     fn: function cloudSync_onCloudFolderSelectedSuccess()
+                     YAHOO.Bubbling.fire("metadataRefresh");
+                     Alfresco.util.PopupManager.displayMessage(
                      {
-                        YAHOO.Bubbling.fire("metadataRefresh");
-                        Alfresco.util.PopupManager.displayMessage(
-                        {
-                           text: this.msg("message.sync.success")
-                        });
-                     },
-                     scope: this
+                        text: this.msg("message.sync.success")
+                     });
                   },
-                  failureMessage: this.msg("message.sync.failure")
-               })
-            }, cloudFolderPicker);
-         }
-         else
-         {
-            var optionInputs = cloudFolderPicker.widgets.optionInputs;
-            if (optionInputs)
-            {
-               for (var i = 0; i < optionInputs.length; i++)
-               {
-                  optionInputs[i].checked = optionInputs[i].defaultChecked;
-               }
-            }
-         }
+                  scope: this
+               },
+               failureMessage: this.msg("message.sync.failure")
+            })
+         }, cloudFolderPicker);
 
          if(!this.modules.cloudAuth)
          {

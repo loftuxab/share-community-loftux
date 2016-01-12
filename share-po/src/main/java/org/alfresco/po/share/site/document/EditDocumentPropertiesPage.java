@@ -14,13 +14,16 @@
  */
 package org.alfresco.po.share.site.document;
 
-import org.alfresco.po.share.FactorySharePage;
-import org.alfresco.webdrone.HtmlPage;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.WebDroneUtil;
-import org.alfresco.webdrone.exception.PageException;
-import org.alfresco.webdrone.exception.PageOperationException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.alfresco.po.HtmlPage;
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.exception.PageException;
+import org.alfresco.po.exception.PageOperationException;
+import org.alfresco.po.share.util.PageUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,11 +33,6 @@ import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Edit document properties page object, holds all element of the HTML page
  * relating to share's edit document properties page.
@@ -43,6 +41,7 @@ import java.util.Map;
  * @author Meenal Bhave
  * @since 1.3.1
  */
+@SuppressWarnings("unchecked")
 public class EditDocumentPropertiesPage extends AbstractEditProperties
 {
     private static Log logger = LogFactory.getLog(EditDocumentPropertiesPage.class);
@@ -52,31 +51,19 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         NAME, TITLE, DESCRIPTION, AUTHOR, PUBLISHER, CONTRIBUTOR, TYPE, IDENTIFIER, SOURCE, COVERAGE, RIGHTS, SUBJECT, SITE_CONFIGURATION, HOSTNAME
     }
 
-    private final String tagName;
+    private String tagName;
 
-    protected EditDocumentPropertiesPage(WebDrone drone, final String tagName)
+    public EditDocumentPropertiesPage render()
     {
-        super(drone);
-        this.tagName = tagName;
-    }
-
-    public EditDocumentPropertiesPage(WebDrone drone)
-    {
-        super(drone);
-        tagName = null;
-    }
-
-    @Override
-    public EditDocumentPropertiesPage render(RenderTime timer)
-    {
+        RenderTime timer = new RenderTime(maxPageLoadingTime);
         while (true)
         {
             timer.start();
             try
             {
-                if (isShareDialogueDisplayed())
+                //If pop dialog
+                if (isDisplayed(By.cssSelector("div[id$='-dialog']")))
                 {
-
                     if (isEditPropertiesPopupVisible())
                     {
                         break;
@@ -126,7 +113,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         }
         try
         {
-            List<WebElement> tags = drone.findAndWaitForElements(By.cssSelector("div.itemtype-tag"));
+            List<WebElement> tags = findAndWaitForElements(By.cssSelector("div.itemtype-tag"));
             for (WebElement tag : tags)
             {
                 if (name.equalsIgnoreCase(tag.getText()))
@@ -141,18 +128,6 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         return false;
     }
 
-    @Override
-    public EditDocumentPropertiesPage render(long time)
-    {
-        return render(new RenderTime(time));
-    }
-
-    @Override
-    public EditDocumentPropertiesPage render()
-    {
-        return render(new RenderTime(maxPageLoadingTime));
-    }
-
     /**
      * Verify if edit properties element,
      * that contains the form is visible.
@@ -160,21 +135,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public boolean isEditPropertiesVisible()
     {
-        try
-        {
-            if (!isShareDialogueDisplayed())
-            {
-                return drone.find(By.cssSelector("div#bd div.share-form")).isDisplayed();
-            }
-            else
-            {
-                return true;
-            }
-        }
-        catch (NoSuchElementException nse)
-        {
-            return false;
-        }
+        return isDisplayed(By.cssSelector("div[id$='edit-metadata']"));
     }
 
     /**
@@ -192,7 +153,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setAuthor(final String author)
     {
-        setInput(drone.find(INPUT_AUTHOR_SELECTOR), author);
+        setInput(driver.findElement(INPUT_AUTHOR_SELECTOR), author);
     }
 
     /**
@@ -203,7 +164,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
     {
         try
         {
-            return drone.find(By.cssSelector("div.itemtype-tag")).isDisplayed();
+            return driver.findElement(By.cssSelector("div.itemtype-tag")).isDisplayed();
         }
         catch (NoSuchElementException nse)
         {
@@ -220,7 +181,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
     // {
     // try
     // {
-    // return drone.find(By.cssSelector("div[class*='itemtype-cm:category']")).isDisplayed();
+    // return driver.findElement(By.cssSelector("div[class*='itemtype-cm:category']")).isDisplayed();
     // }
     // catch (NoSuchElementException nse)
     // {
@@ -243,7 +204,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setResolutionUnit(final String unit)
     {
-        setInput(drone.find(INPUT_RESOLUTION_UNIT_SELECTOR), unit);
+        setInput(driver.findElement(INPUT_RESOLUTION_UNIT_SELECTOR), unit);
     }
 
     /**
@@ -261,7 +222,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setVerticalResolution(final String verticalResolution)
     {
-        setInput(drone.find(INPUT_VERTICAL_RESOLUTION_SELECTOR), verticalResolution);
+        setInput(driver.findElement(INPUT_VERTICAL_RESOLUTION_SELECTOR), verticalResolution);
     }
 
     /**
@@ -279,7 +240,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setOrientation(final String orientation)
     {
-        setInput(drone.find(INPUT_ORIENTATION_SELECTOR), orientation);
+        setInput(driver.findElement(INPUT_ORIENTATION_SELECTOR), orientation);
     }
 
     /**
@@ -293,7 +254,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         {
             throw new UnsupportedOperationException("This operation is not supported");
         }
-        WebElement selected = drone.find(By.cssSelector("select[id$='prop_mimetype'] option[selected='selected']"));
+        WebElement selected = driver.findElement(By.cssSelector("select[id$='prop_mimetype'] option[selected='selected']"));
         return selected.getText();
     }
 
@@ -306,7 +267,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void selectMimeType(final String mimeType)
     {
-        WebElement dropDown = drone.find(By.cssSelector("select[id$='prop_mimetype']"));
+        WebElement dropDown = driver.findElement(By.cssSelector("select[id$='prop_mimetype']"));
         Select select = new Select(dropDown);
         select.selectByVisibleText(mimeType);
     }
@@ -324,7 +285,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         {
             throw new UnsupportedOperationException("This operation is not supported");
         }
-        WebElement dropDown = drone.find(By.cssSelector("select[id$='prop_mimetype']"));
+        WebElement dropDown = driver.findElement(By.cssSelector("select[id$='prop_mimetype']"));
         Select select = new Select(dropDown);
         String value = select.getFirstSelectedOption().getAttribute("value");
         select.selectByValue(mimeType.getMimeCode());
@@ -344,7 +305,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
     {
         try
         {
-            return drone.find(By.cssSelector("span.yui-button.yui-submit-button")).isDisplayed();
+            return driver.findElement(By.cssSelector("span.yui-button.yui-submit-button.alf-primary-button")).isDisplayed();
         }
         catch (NoSuchElementException nse)
         {
@@ -361,7 +322,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
     {
         clickSave();
         // WEBDRONE-523: Amended to return HtmlPage rather than DocumentDetailsPage
-        return drone.getCurrentPage();
+        return getCurrentPage();
     }
 
     /**
@@ -382,7 +343,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
             clickSave();
         }
         // WEBDRONE-523: Amended to return HtmlPage rather than DocumentDetailsPage
-        return FactorySharePage.resolvePage(drone);
+        return getCurrentPage();
     }
 
     /**
@@ -394,7 +355,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
     {
         clickOnCancel();
         // WEBDRONE-523: Amended to return HtmlPage rather than DocumentDetailsPage
-        return FactorySharePage.resolvePage(drone);
+        return getCurrentPage();
     }
 
     /**
@@ -470,14 +431,9 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public boolean isEditPropertiesPopupVisible()
     {
-
-        if (!isShareDialogueDisplayed())
-        {
-            throw new UnsupportedOperationException("This operation is unsupported.");
-        }
         try
         {
-            return drone.find(By.cssSelector("form.bd")).isDisplayed();
+            return !driver.findElements(By.tagName("form")).isEmpty();
         }
         catch (NoSuchElementException nse)
         {
@@ -497,7 +453,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
     public HtmlPage selectAllProperties()
     {
         clickAllProperties();
-        return FactorySharePage.resolvePage(drone);
+        return getCurrentPage();
     }
 
     /**
@@ -507,7 +463,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setPublisher(String publisher)
     {
-        setInput(drone.find(INPUT_PUBLISHER_SELECTOR), publisher);
+        setInput(driver.findElement(INPUT_PUBLISHER_SELECTOR), publisher);
     }
 
     /**
@@ -525,7 +481,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setContributor(String contributor)
     {
-        setInput(drone.find(INPUT_CONTRIBUTOR_SELECTOR), contributor);
+        setInput(driver.findElement(INPUT_CONTRIBUTOR_SELECTOR), contributor);
     }
 
     /**
@@ -543,7 +499,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setType(String type)
     {
-        setInput(drone.find(INPUT_TYPE_SELECTOR), type);
+        setInput(driver.findElement(INPUT_TYPE_SELECTOR), type);
     }
 
     /**
@@ -561,7 +517,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setIdentifier(String identifier)
     {
-        setInput(drone.find(INPUT_IDENTIFIER_SELECTOR), identifier);
+        setInput(driver.findElement(INPUT_IDENTIFIER_SELECTOR), identifier);
     }
 
     /**
@@ -579,7 +535,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setSource(String source)
     {
-        setInput(drone.find(INPUT_SOURCE_SELECTOR), source);
+        setInput(driver.findElement(INPUT_SOURCE_SELECTOR), source);
     }
 
     /**
@@ -597,7 +553,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setCoverage(String coverage)
     {
-        setInput(drone.find(INPUT_COVERAGE_SELECTOR), coverage);
+        setInput(driver.findElement(INPUT_COVERAGE_SELECTOR), coverage);
     }
 
     /**
@@ -615,7 +571,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setRights(String rights)
     {
-        setInput(drone.find(INPUT_RIGHTS_SELECTOR), rights);
+        setInput(driver.findElement(INPUT_RIGHTS_SELECTOR), rights);
     }
 
     /**
@@ -633,7 +589,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setSubject(String subject)
     {
-        setInput(drone.find(INPUT_SUBJECT_SELECTOR), subject);
+        setInput(driver.findElement(INPUT_SUBJECT_SELECTOR), subject);
     }
 
     /**
@@ -652,7 +608,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setRenditionConfig(String rendConfig)
     {
-        setInput(drone.findAndWait(REDITION_CONFIG), rendConfig);
+        setInput(findAndWait(REDITION_CONFIG), rendConfig);
     }
 
     /**
@@ -671,7 +627,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setSiteConfiguration(String siteConfiguration)
     {
-        setInput(drone.find(INPUT_SITE_CONFIGURATION_SELECTOR), siteConfiguration);
+        setInput(driver.findElement(INPUT_SITE_CONFIGURATION_SELECTOR), siteConfiguration);
     }
 
     /**
@@ -679,7 +635,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public String getSiteConfiguration()
     {
-        return drone.find(INPUT_SITE_CONFIGURATION_SELECTOR).getText();
+        return driver.findElement(INPUT_SITE_CONFIGURATION_SELECTOR).getText();
     }
 
     /**
@@ -689,7 +645,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setSiteHostname(String Hostname)
     {
-        setInput(drone.find(INPUT_SITE_HOSTNAME_SELECTOR), Hostname);
+        setInput(driver.findElement(INPUT_SITE_HOSTNAME_SELECTOR), Hostname);
     }
 
     /**
@@ -697,7 +653,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public String getSiteHostname()
     {
-        return drone.find(INPUT_SITE_HOSTNAME_SELECTOR).getText();
+        return driver.findElement(INPUT_SITE_HOSTNAME_SELECTOR).getText();
     }
 
     /**
@@ -707,7 +663,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public List<String> getWebAssets()
     {
-        WebElement assetsList = drone.findAndWait(WEB_ASSETS_LIST);
+        WebElement assetsList = findAndWait(WEB_ASSETS_LIST);
         List<WebElement> assets = assetsList.findElements(By.cssSelector("div"));
         List<String> foundAssets = new ArrayList<>();
 
@@ -726,7 +682,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     private Map<String, WebElement> getInputFieldForProperty(String propertyName)
     {
-        WebDroneUtil.checkMandotaryParam("Specify appropriate Property Name", propertyName);
+        PageUtils.checkMandotaryParam("Specify appropriate Property Name", propertyName);
         
         String fieldType = "input";
         String fieldSelector = "div.form-field>" + fieldType + "[id$='" + propertyName + "']";
@@ -736,7 +692,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         // Find Field: Try TextInput first (text area)
         try
         {
-            WebElement field = drone.findFirstDisplayedElement(By.cssSelector(fieldSelector));
+            WebElement field = findFirstDisplayedElement(By.cssSelector(fieldSelector));
             if ("checkbox".equals(field.getAttribute("type")))
             {
                 formFieldInfo.put("checkbox", field);
@@ -757,7 +713,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         {
             fieldSelector = "div.form-field>" + fieldType + "[id$='" + propertyName + "-entry']";
             
-            WebElement field = drone.findFirstDisplayedElement(By.cssSelector(fieldSelector));
+            WebElement field = findFirstDisplayedElement(By.cssSelector(fieldSelector));
             if ("checkbox".equals(field.getAttribute("type")))
             {
                 formFieldInfo.put("checkbox", field);
@@ -778,7 +734,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         {
             fieldSelector = "div.form-field>" + fieldType + "[id$='" + propertyName + "-cntrl-date']";
             
-            WebElement field = drone.findFirstDisplayedElement(By.cssSelector(fieldSelector));
+            WebElement field = findFirstDisplayedElement(By.cssSelector(fieldSelector));
             formFieldInfo.put("text", field);
             return formFieldInfo;
         }
@@ -792,7 +748,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         {
             fieldType = "textarea";
             fieldSelector = "div.form-field>" + fieldType + "[id$='" + propertyName + "']";
-            WebElement field = drone.findFirstDisplayedElement(By.cssSelector(fieldSelector));
+            WebElement field = findFirstDisplayedElement(By.cssSelector(fieldSelector));
             formFieldInfo.put("textarea", field);
             return formFieldInfo;
         }
@@ -806,7 +762,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         {
             fieldType = "select";
             fieldSelector = "div.form-field>" + fieldType + "[id$='" + propertyName + "']";
-            WebElement field = drone.findFirstDisplayedElement(By.cssSelector(fieldSelector));
+            WebElement field = findFirstDisplayedElement(By.cssSelector(fieldSelector));
             formFieldInfo.put("select", field);
             return formFieldInfo;
         }
@@ -820,7 +776,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
         {
             fieldType = "select";
             fieldSelector = "div.form-field>" + fieldType + "[id$='" + propertyName + "_multilist-entry']";
-            WebElement field = drone.findFirstDisplayedElement(By.cssSelector(fieldSelector));
+            WebElement field = findFirstDisplayedElement(By.cssSelector(fieldSelector));
             formFieldInfo.put("multiselect", field);
             return formFieldInfo;
         }
@@ -840,7 +796,7 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
      */
     public void setProperties(Map<String, Object> properties)
     {
-        WebDroneUtil.checkMandotaryParam("Expected Properties Map", properties);
+        PageUtils.checkMandotaryParam("Expected Properties Map", properties);
         
         for (Map.Entry<String, Object> entry : properties.entrySet())
         {
@@ -899,5 +855,14 @@ public class EditDocumentPropertiesPage extends AbstractEditProperties
             
         }
         return currentValue;
+    }
+    public boolean isErrorDialogDisplayed()
+    {
+        return isDisplayed(By.cssSelector("div#prompt"));
+    }
+    public HtmlPage clickOkError()
+    {
+        driver.findElement(By.xpath(".//div[@id='prompt']//button[text()='OK']")).click();
+        return this;
     }
 }

@@ -1,7 +1,7 @@
 <script type="text/javascript">//<![CDATA[
    new Alfresco.dashlet.WCMQS("${args.htmlid}").setOptions(
    {
-      siteId: "${page.url.templateArgs.site!""}"
+      siteId: "${(page.url.templateArgs.site!"")?js_string}"
    }).setMessages(${messages});
 //]]></script>
 
@@ -22,7 +22,7 @@
       </div>      
    <#else>
       <div class="detail-list-item last-item" >
-         <a href="${msg("url.help")}" target="_new">${msg("label.help_link")}</a>
+         <a href="${msg("url.help", context.properties["docsEdition"].value)}" target="_new">${msg("label.help_link")}</a>
       </div>
    </#if>
    

@@ -6,7 +6,7 @@
          <div class="about">
             <#assign split=serverVersion?index_of(" ")>
             <div class="header">Alfresco Share v${shareVersion?html}</div>
-            <div>(Aikau ${shareLibs.aikau?html},  Spring Surf ${shareLibs.surf?html}, Spring WebScripts ${shareLibs.webscripts?html}, Freemarker ${shareLibs.freemarker?html}, Rhino ${shareLibs.rhino?html}, Yui ${shareLibs.yui?html})</div>
+            <div>(${shareBuild?html}<#if shareLibs?size != 0>, Aikau ${shareLibs.aikau?html},  Spring Surf ${shareLibs.surf?html}, Spring WebScripts ${shareLibs.webscripts?html}, Freemarker ${shareLibs.freemarker?html}, Rhino ${shareLibs.rhino?html}, Yui ${shareLibs.yui?html}</#if>)</div>
             <div class="header">Alfresco ${serverEdition?html} v${serverVersion?substring(0, split)?html}</div>
             <div>${serverVersion?substring(split+1)?html} schema ${serverSchema?html}</div>
             <#assign split=server.version?index_of(" ")>
@@ -47,7 +47,7 @@ Zaizi<br/>
                </div>
             </div>
             <div class="copy">
-               <span>&copy; 2005-2015 Alfresco Software Inc. All rights reserved.</span>
+               <span>&copy; 2005-2016 Alfresco Software Inc. All rights reserved.</span>
                <a href="http://www.alfresco.com" target="new">www.alfresco.com</a>
                <a href="http://www.alfresco.com/legal/agreements/" target="new">Legal and License</a>
             </div>

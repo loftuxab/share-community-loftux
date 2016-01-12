@@ -38,7 +38,7 @@
                      <#-- INVITE -->
                      <@markup id="managerToolbar-inviteLink">
                         <span class="first-child">
-                           <a href="invite" class="theme-color-1">
+                           <a href="${addUsersPage}" class="theme-color-1">
                               <img src="${url.context}/res/components/images/user-16.png" style="vertical-align: text-bottom" width="16" />
                            ${msg("link.invite")}</a>
                         </span>
@@ -123,17 +123,6 @@
                      <@markup id="list-item-role">
                         <div>${msg("role." + m.role)}</div>
                      </@markup>
-
-                     <#if m.authority.userStatus?? && (m.authority.userStatus?length > 0)>
-
-                        <#-- LIST - ITEM - STATUS -->
-                        <@markup id="list-item-status">
-                           <#if m.authority.userStatus??>
-                           <div class="user-status">${m.authority.userStatus?html} <span class="time">(<span class="relativeTime">${m.authority.userStatusTime.iso8601?html}</span>)</span></div>
-                           </#if>
-                        </@markup>
-
-                     </#if>
 
                   </div>
                   <div class="clear"></div>

@@ -79,9 +79,7 @@ input[type="file"] > input[type="button"]::-moz-focus-inner
    text-decoration: none;
 }
 
-/*.sticky-wrapper a:hover,
-.sticky-footer a:hover,
-.yui-overlay a:hover
+/*#bd a:hover
 {
    text-decoration: underline;
 }*/
@@ -985,6 +983,13 @@ body.yui-skin-lightTheme .yuimenuitemlabel
 body.yui-skin-lightTheme .yuimenu .bd ul li.yuimenuitem-selected
 {
    background-color: #eee;
+}
+
+body.yui-skin-lightTheme .yuimenu .bd ul li.yuimenuitem  a.yuimenuitemlabel:focus, 
+body.yui-skin-lightTheme .yuimenu .bd ul li.yuimenuitem  a.yuimenuitemlabel:hover,
+body.yui-skin-lightTheme .yuimenu .bd ul li.yuimenuitem-selected a.yuimenuitemlabel:focus, 
+body.yui-skin-lightTheme .yuimenu .bd ul li.yuimenuitem-selected a.yuimenuitemlabel:hover {
+  color: #000;
 }
 
 body.yui-skin-lightTheme .yuimenu .bd ul li.yuimenuitem .yuimenuitemlabel,

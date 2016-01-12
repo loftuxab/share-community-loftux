@@ -15,23 +15,24 @@
 
 package org.alfresco.po.share.search;
 
-import static org.alfresco.webdrone.RenderElement.getVisibleRenderElement;
+import static org.alfresco.po.RenderElement.getVisibleRenderElement;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import org.alfresco.po.share.FactorySharePage;
+import org.alfresco.po.HtmlPage;
+import org.alfresco.po.RenderElement;
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.exception.PageException;
 import org.alfresco.po.share.SharePage;
 import org.alfresco.po.share.exception.ShareException;
-import org.alfresco.webdrone.HtmlPage;
-import org.alfresco.webdrone.RenderElement;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.exception.PageException;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
+
+import ru.yandex.qatools.htmlelements.element.TextInput;
 
 /**
  * Advance search Abstract contains all the common functions of the search
@@ -43,7 +44,6 @@ import org.openqa.selenium.support.ui.Select;
 public class AdvanceSearchPage extends SharePage
 {
     protected static final By KEYWORD_SEARCH = By.cssSelector("input[id$='default-search-text']");
-    protected static final By NAME_SEARCH = By.cssSelector("input[id$='prop_cm_name']");
     protected static final By TITLE_SEARCH = By.cssSelector("textarea[id$='prop_cm_title']");
     protected static final By DESCRIPTION_SEARCH = By.cssSelector("textarea[id$='prop_cm_description']");
     protected static final By MODIFIER_SEARCH = By.cssSelector("input[id$='prop_cm_modifier']");
@@ -62,16 +62,6 @@ public class AdvanceSearchPage extends SharePage
     private final RenderElement searchButtonElement = getVisibleRenderElement(SEARCH_BUTTON);
 
     /**
-     * Constructor
-     *
-     * @param drone WebDrone
-     */
-    public AdvanceSearchPage(WebDrone drone)
-    {
-        super(drone);
-    }
-
-    /**
      * Check whether Search button is displayed correctly.
      *
      * @return true if page is displayed correctly
@@ -80,7 +70,7 @@ public class AdvanceSearchPage extends SharePage
     {
         try
         {
-            return drone.find(SEARCH_BUTTON).isDisplayed();
+            return driver.findElement(SEARCH_BUTTON).isDisplayed();
         }
         catch (NoSuchElementException nse)
         {
@@ -97,7 +87,7 @@ public class AdvanceSearchPage extends SharePage
     {
         try
         {
-            return drone.find(MODIFIER_FROM_SEARCH).isDisplayed();
+            return driver.findElement(MODIFIER_FROM_SEARCH).isDisplayed();
         }
         catch (NoSuchElementException nse)
         {
@@ -131,6 +121,7 @@ public class AdvanceSearchPage extends SharePage
         return findElementDisplayed(KEYWORD_SEARCH).getAttribute("value");
     }
 
+    @FindBy(css="input[id$='prop_cm_name']") TextInput name;
     /**
      * Enter the text value in the Name field.
      *
@@ -142,9 +133,8 @@ public class AdvanceSearchPage extends SharePage
         {
             throw new UnsupportedOperationException("Search term is required to perform a search");
         }
-        WebElement nameElement = findElementDisplayed(NAME_SEARCH);
-        nameElement.clear();
-        nameElement.sendKeys(nameSearchText);
+        name.clear();
+        name.sendKeys(nameSearchText);
     }
 
     /**
@@ -154,7 +144,7 @@ public class AdvanceSearchPage extends SharePage
      */
     public String getName()
     {
-        return findElementDisplayed(NAME_SEARCH).getAttribute("value");
+        return name.getText();
     }
 
     /**
@@ -298,7 +288,7 @@ public class AdvanceSearchPage extends SharePage
         {
             throw new UnsupportedOperationException("Search term is required to perform a search");
         }
-        WebElement dropDown = drone.find(CONTENT_MIME_TYPE);
+        WebElement dropDown = driver.findElement(CONTENT_MIME_TYPE);
         Select select = new Select(dropDown);
         select.selectByVisibleText(mimeType);
     }
@@ -310,18 +300,19 @@ public class AdvanceSearchPage extends SharePage
      */
     public HtmlPage clickSearch()
     {
-        drone.findAndWait(SEARCH_BUTTON).click();
-        return FactorySharePage.resolvePage(drone);
+        driver.findElement(SEARCH_BUTTON).click();
+        waitUntilElementDisappears(SEARCH_BUTTON, 1);
+        return getCurrentPage();
     }
 
     /**
-     * This function will help to find element in the content and folder serach form.
+     * This function will help to find element in the content and folder search form.
      *
      * @return - WebElement
      */
     protected WebElement findElementDisplayed(By elementId)
     {
-        List<WebElement> elementList = drone.findAll(elementId);
+        List<WebElement> elementList = driver.findElements(elementId);
         for (WebElement elementSelected : elementList)
         {
             if (elementSelected.isDisplayed())
@@ -341,8 +332,8 @@ public class AdvanceSearchPage extends SharePage
     {
         try
         {
-            drone.find(CONTENT_SEARCH_FORM_DROPDOWN).click();
-            WebElement searchMenudropdown = drone.findAndWait(FOLDER_SEARCH_MENU);
+            driver.findElement(CONTENT_SEARCH_FORM_DROPDOWN).click();
+            WebElement searchMenudropdown = findAndWait(FOLDER_SEARCH_MENU);
             WebElement menuWebElement = searchMenudropdown.findElement(FOLDER_SEARCH_MENU_ITEM);
             List<WebElement> menuList = menuWebElement.findElements(FOLDER_MENU_LIST);
             for (WebElement searchelement : menuList)
@@ -350,12 +341,12 @@ public class AdvanceSearchPage extends SharePage
                 if (searchType.equalsIgnoreCase("Folders") && searchType.equals(searchelement.getText()))
                 {
                     searchelement.click();
-                    return new AdvanceSearchFolderPage(drone);
+                    return getCurrentPage();
                 }
                 else if ((searchType.equalsIgnoreCase("CRM Attachments") && searchType.equals(searchelement.getText())))
                 {
                     searchelement.click();
-                    return new AdvanceSearchCRMPage(drone);
+                    return getCurrentPage();
                 }
             }
             throw new PageException(searchType + " Search Page not found");
@@ -376,16 +367,16 @@ public class AdvanceSearchPage extends SharePage
         }
         catch (NoSuchElementException nse)
         {
-            drone.find(CONTENT_SEARCH_FORM_DROPDOWN).click();
+            driver.findElement(CONTENT_SEARCH_FORM_DROPDOWN).click();
         }
-        WebElement searchMenudropdown = drone.findAndWait(FOLDER_SEARCH_MENU);
+        WebElement searchMenudropdown = findAndWait(FOLDER_SEARCH_MENU);
         WebElement menuWebElement = searchMenudropdown.findElement(FOLDER_SEARCH_MENU_ITEM);
         List<WebElement> menuList = menuWebElement.findElements(FOLDER_MENU_LIST);
         for (WebElement searchelement : menuList)
         {
-            if (searchelement.getText().equalsIgnoreCase(drone.getValue("advanced.search.content")))
+            if (searchelement.getText().equalsIgnoreCase(getValue("advanced.search.content")))
                 isContent = true;
-            else if (searchelement.getText().equalsIgnoreCase(drone.getValue("advanced.search.folders")))
+            else if (searchelement.getText().equalsIgnoreCase(getValue("advanced.search.folders")))
                 isFolder = true;
         }
         return isContent && isFolder;
@@ -411,7 +402,7 @@ public class AdvanceSearchPage extends SharePage
     private boolean isPageCorrect()
     {
         return findElementDisplayed(CONTENT_SEARCH_FORM_DROPDOWN).isDisplayed() && isLookForDropDownCorrect()
-            && isSearchButtonDisplayed() && findElementDisplayed(KEYWORD_SEARCH).isDisplayed() && findElementDisplayed(NAME_SEARCH).isDisplayed()
+            && isSearchButtonDisplayed() && findElementDisplayed(KEYWORD_SEARCH).isDisplayed() && name.isDisplayed()
             && findElementDisplayed(TITLE_SEARCH).isDisplayed() && findElementDisplayed(DESCRIPTION_SEARCH).isDisplayed();
     }
 
@@ -423,7 +414,7 @@ public class AdvanceSearchPage extends SharePage
     public boolean isAdvSearchPageCorrectlyDisplayed()
     {
         boolean isCorrect;
-        SharePage page = drone.getCurrentPage().render();
+        SharePage page = getCurrentPage().render();
         if (page instanceof AdvanceSearchFolderPage)
             isCorrect = isPageCorrect();
         else
@@ -437,18 +428,18 @@ public class AdvanceSearchPage extends SharePage
      *
      * @return SiteResultsPage
      */
-    public SiteResultsPage clickBackToResults()
+    public HtmlPage clickBackToResults()
     {
         try
         {
-            WebElement backLink = drone.find(BACK_TO_RESULTS_LINK);
+            WebElement backLink = driver.findElement(BACK_TO_RESULTS_LINK);
             backLink.click();
         }
         catch (NoSuchElementException nse)
         {
             throw new ShareException("Unable to find " + BACK_TO_RESULTS_LINK);
         }
-        return drone.getCurrentPage().render();
+        return getCurrentPage();
     }
 
     /**
@@ -456,18 +447,18 @@ public class AdvanceSearchPage extends SharePage
      *
      * @return SharePage
      */
-    public SharePage clickBackToSite()
+    public HtmlPage clickBackToSite()
     {
         try
         {
-            WebElement backLink = drone.find(BACK_TO_SITE_LINK);
+            WebElement backLink = driver.findElement(BACK_TO_SITE_LINK);
             backLink.click();
         }
         catch (NoSuchElementException nse)
         {
             throw new ShareException("Unable to find " + BACK_TO_SITE_LINK);
         }
-        return drone.getCurrentPage().render();
+        return getCurrentPage();
     }
 
     @SuppressWarnings("unchecked")
@@ -486,13 +477,6 @@ public class AdvanceSearchPage extends SharePage
         }
 
         return this;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public AdvanceSearchPage render(long time)
-    {
-        return render(new RenderTime(maxPageLoadingTime));
     }
 
     @SuppressWarnings("unchecked")

@@ -21,44 +21,48 @@ package org.alfresco.po.share.steps;
  *  @author mbhave
  */
 
+import org.alfresco.po.HtmlPage;
+import org.alfresco.po.exception.PageException;
+import org.alfresco.po.share.DashBoardPage;
+import org.alfresco.po.share.FactoryPage;
 import org.alfresco.po.share.SharePage;
-import org.alfresco.webdrone.HtmlPage;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.exception.PageException;
+import org.openqa.selenium.WebDriver;
+import org.springframework.beans.factory.annotation.Autowired;
 
-public class CommonActions
+public abstract class CommonActions
 {
     public static long refreshDuration = 25000;
     protected static final String MY_DASHBOARD = " Dashboard";
     public final static String DOCLIB = "DocumentLibrary";
+    @Autowired protected FactoryPage factoryPage;
 
     /**
      * Checks if driver is null, throws UnsupportedOperationException if so.
      *
-     * @param driver WebDrone Instance
+     * @param driver WebDriver Instance
      * @throws UnsupportedOperationException if driver is null
      */
-    public void checkIfDriverIsNull(WebDrone driver)
+    public void checkIfDriverIsNull(WebDriver driver)
     {
         if (driver == null)
         {
-            throw new UnsupportedOperationException("WebDrone is required");
+            throw new UnsupportedOperationException("WebDriver is required");
         }
     }
     
     /**
      * Checks if the current page is share page, throws PageException if not.
      *
-     * @param driver WebDrone Instance
+     * @param driver WebDriver Instance
      * @return SharePage
      * @throws PageException if the current page is not a share page
      */
-    public SharePage getSharePage(WebDrone driver)
+    public SharePage getSharePage(WebDriver driver)
     {
         checkIfDriverIsNull(driver);
         try
         {
-            HtmlPage generalPage = driver.getCurrentPage().render(refreshDuration);
+            HtmlPage generalPage = factoryPage.getPage(driver);
             return (SharePage) generalPage;
         }
         catch (PageException pe)
@@ -70,23 +74,23 @@ public class CommonActions
     /**
      * Refreshes and returns the current page: throws PageException if not a share page.
      * 
-     * @param driver WebDrone Instance
+     * @param driver WebDriver Instance
      * @return HtmlPage
      * */
-    public HtmlPage refreshSharePage(WebDrone driver)
+    public HtmlPage refreshSharePage(WebDriver driver)
     {
         checkIfDriverIsNull(driver);
-        driver.refresh();
+        driver.navigate().refresh();
         return getSharePage(driver);
     }
 
     /**
      * Common method to wait for the next solr indexing cycle.
      * 
-     * @param driver WebDrone Instance
+     * @param driver WebDriver Instance
      * @param waitMiliSec Wait duration in milliseconds
      */
-    public HtmlPage webDriverWait(WebDrone driver, long waitMiliSec)
+    public HtmlPage webDriverWait(WebDriver driver, long waitMiliSec)
     {
         checkIfDriverIsNull(driver);
 
@@ -102,5 +106,37 @@ public class CommonActions
             }
         }
         return getSharePage(driver);
+    }
+    /**
+     * Navigate to User DashBoard page and waits for the page render to
+     * complete. Assumes User is logged in
+     * 
+     * @param driver WebDriver Instance
+     * @return DashBoardPage
+     */
+    public DashBoardPage refreshUserDashboard(WebDriver driver)
+    {
+        // Assumes User is logged in
+        SharePage page = getSharePage(driver);
+        return page.getNav().selectMyDashBoard().render();
+    }
+
+    /**
+     * Navigate to User DashBoard and waits for the page render to complete.
+     * Assumes User is logged in
+     * 
+     * @param driver WebDriver Instance
+     * @return DashBoardPage
+     */
+    public DashBoardPage openUserDashboard(WebDriver driver)
+    {
+        // Assumes User is logged in
+        SharePage page = getSharePage(driver);
+        if (page.getPageTitle().contains(MY_DASHBOARD))
+        {
+            return (DashBoardPage) page;
+        }
+
+        return refreshUserDashboard(driver);
     }
 }

@@ -228,7 +228,8 @@
          // Create and save a reference to the buttons so we can alter them later
          this.widgets.uploadButton = Alfresco.util.createYUIButton(this, "upload-button", null,
          {
-            type: "submit"
+            type: "submit",
+            additionalClass: "alf-primary-button"
          });
          this.widgets.cancelButton = Alfresco.util.createYUIButton(this, "cancel-button", this.onCancelButtonClick);
          
@@ -435,7 +436,7 @@
             text = Alfresco.util.message(key, this.name);
          if (text == key)
          {
-            text = e.status.code ? e.status.code : Alfresco.util.message("message.failure", this.name);
+            text = e.message ? e.message : Alfresco.util.message("message.failure", this.name);
          }
          Alfresco.util.PopupManager.displayPrompt(
          {

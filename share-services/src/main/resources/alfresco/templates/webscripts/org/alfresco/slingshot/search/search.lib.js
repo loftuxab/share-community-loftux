@@ -929,29 +929,27 @@ function getSearchResults(params)
                         first = false;
                      }
                   }
-                  else if (propName.indexOf("cm:categories") != -1)
+                  else if (isCategoryProperty(formJson, p))
                   {
-                     // determines if the checkbox use sub categories was clicked
-                     if (propName.indexOf("usesubcats") == -1)
+                     // If there's no suffix it means this property holds the value for categories
+                     if (propName.indexOf("usesubcats") == -1 && propName.indexOf("isCategory") == -1)
                      {
-                        if (formJson["prop_cm_categories_usesubcats"] == "true")
+                        // Determines if the checkbox use sub categories was clicked
+                        if (formJson[p + "_usesubcats"] == "true")
                         {
                            useSubCats = true;
                         }
 
-                        // build list of category terms to search for
-                        var firstCat = true;
+                        // Build list of category terms to search for
                         var catQuery = "";
                         var cats = propValue.split(',');
-                        for (var i = 0; i < cats.length; i++)
+                        if (propName.indexOf("cm:categories") != -1)
                         {
-                           var cat = cats[i];
-                           var catNode = search.findNode(cat);
-                           if (catNode)
-                           {
-                              catQuery += (firstCat ? '' : ' OR ') + "PATH:\"" + catNode.qnamePath + (useSubCats ? "//*\"" : "/member\"" );
-                              firstCat = false;
-                           }
+                           catQuery = processDefaultCategoryProperty(cats, useSubCats);
+                        }
+                        else
+                        {
+                           catQuery = processCustomCategoryProperty(propName, cats, useSubCats);
                         }
 
                         if (catQuery.length !== 0)
@@ -962,12 +960,15 @@ function getSearchResults(params)
                         }
                      }
                   }
-                  else if (isMultiValueProperty(propValue, modePropValue))
+                  else if (isMultiValueProperty(propValue, modePropValue) || isListProperty(formJson, p))
                   {
-                     formQuery += (first ? '(' : ' AND (');
-                     formQuery += processMultiValue(propName, propValue, modePropValue, false);
-                     formQuery += ')';
-                     first = false;
+                      if(propName.indexOf('isListProperty') === -1) 
+                      {
+                          formQuery += (first ? '(' : ' AND (');
+                          formQuery += processMultiValue(propName, propValue, modePropValue, false);
+                          formQuery += ')';
+                          first = false;
+                     }
                   }
                   else
                   {
@@ -1022,6 +1023,8 @@ function getSearchResults(params)
 
    if (ftsQuery.length !== 0)
    {
+      // Filter queries
+	  var fqs = [];
       if (params.filters != null)
       {
          // comma separated list of filter pairs - filter|value|value|...
@@ -1059,7 +1062,7 @@ function getSearchResults(params)
       // ensure a TYPE is specified - if no add one to remove system objects from result sets
       if (ftsQuery.indexOf("TYPE:\"") === -1 && ftsQuery.indexOf("TYPE:'") === -1)
       {
-         ftsQuery += ' AND (+TYPE:"cm:content" OR +TYPE:"cm:folder")';
+    	 fqs.push('+TYPE:"cm:content" OR +TYPE:"cm:folder"');
       }
 
       // we processed the search terms, so suffix the PATH query
@@ -1106,14 +1109,16 @@ function getSearchResults(params)
       }
       else if (path !== null)
       {
-         ftsQuery = 'PATH:"' + path + '/*" AND (' + ftsQuery + ')';
+    	 fqs.push('PATH:"' + path + '/*"');
       }
       else if (site !== null)
       {
-         ftsQuery = site + ' AND (' + ftsQuery + ')';
+    	 fqs.push(site);
       }
-      ftsQuery = '(' + ftsQuery + ') AND -TYPE:"cm:thumbnail" AND -TYPE:"cm:failedThumbnail" AND -TYPE:"cm:rating" AND -TYPE:"st:site"' +
-                                   ' AND -ASPECT:"st:siteContainer" AND -ASPECT:"sys:hidden" AND -cm:creator:system AND -QNAME:comment\\-*';
+      
+      fqs.push('-TYPE:"cm:thumbnail" AND -TYPE:"cm:failedThumbnail" AND -TYPE:"cm:rating" AND -TYPE:"st:site"' +
+               ' AND -ASPECT:"st:siteContainer" AND -ASPECT:"sys:hidden" AND -cm:creator:system AND -QNAME:comment\\-*');
+      
       
       // sort field - expecting field to in one of the following formats:
       //  - short QName form such as: cm:name
@@ -1171,6 +1176,7 @@ function getSearchResults(params)
          onerror: "no-results",
          sort: sortColumns,
          fieldFacets: params.facetFields != null ? params.facetFields.split(",") : null,
+         filterQueries: fqs,
          searchTerm: params.term,
          spellCheck: params.spell
       };
@@ -1237,4 +1243,104 @@ function getQueryTemplate()
       template: t,
       operator: operator
    };
+}
+
+/*
+* Helper method used to determine whether the property is tied to a list of properties.
+*
+* @param formJSON the list of the properties provided to the form
+* @param prop propertyname 
+* @return true if it is tied to a list of properties, false otherwise
+*/
+function isListProperty(formJson, prop)
+{
+  return prop.indexOf('isListProperty') != -1 || prop+'_isListProperty' in formJson;
+}
+
+/**
+ * Helper method used to determine whether the property is tied to categories.
+ *
+ * @param formJSON the list of the properties provided to the form
+ * @param prop propertyname 
+ * @return true if it is tied to categories, false otherwise
+ */
+function isCategoryProperty(formJson, prop)
+{
+   return prop.indexOf('usesubcats') != -1 || prop.indexOf('isCategory') != -1 ||
+      prop+'_usesubcats' in formJson || prop+'_isCategory' in formJson;
+}
+
+/**
+ * Helper method used to construct lucene query fragment for a default category property.
+ *
+ * @param cats the selected categories (array of string noderef)
+ * @param useSubCats boolean that indicates if should search also in subcategories 
+ * @return lucene query with default category property
+ */
+function processDefaultCategoryProperty(cats, useSubCats)
+{
+   var firstCat = true;
+   var catQuery = "";
+   for (var i = 0; i < cats.length; i++)
+   {
+      var cat = cats[i];
+      var catNode = search.findNode(cat);
+      if (catNode)
+      {
+         catQuery += (firstCat ? '' : ' OR ') + "PATH:\"" + catNode.qnamePath + (useSubCats ? "//*\"" : "/member\"" );
+      
+         firstCat = false;
+      }
+   }
+   return catQuery;
+}
+
+/**
+ * Helper method used to construct lucene query fragment for a custom category property.
+ *
+ * @param propName property name
+ * @param cats the selected categories (array of string noderef)
+ * @param useSubCats boolean that indicates if should search also in subcategories 
+ * @return lucene query with custom category property
+ */
+function processCustomCategoryProperty(propName, cats, useSubCats)
+{
+   var catQuery = "";
+
+   // Prepare the query that will be used to load all the noderefs for the selected categories values
+   // (and their subcategories if selected)
+   var selectedCatsQuery = "";
+   for (var i = 0; i < cats.length; i++)
+   {
+      var cat = cats[i];
+      var catNode = search.findNode(cat);
+      if (catNode)
+      {
+         selectedCatsQuery += "+PATH:\"" + catNode.qnamePath + (useSubCats ? "//." : '') + "\" ";
+      }
+   }
+
+   if (selectedCatsQuery.length !== 0)
+   {
+      // Load all the noderefs for the selected categories values
+      var queryDefCat = {
+            query: selectedCatsQuery,
+            language: "fts-alfresco",
+            onerror: "no-results"
+      };
+      var rs = search.queryResultSet(queryDefCat);
+      var selectedCatNodes = rs.nodes;
+
+      // Create lucene query with custom category property
+      if (selectedCatNodes && selectedCatNodes.length !== 0)
+      {
+         for (var j = 0; j < selectedCatNodes.length; j++) 
+         {
+            var selectedCatNode = selectedCatNodes[j];
+            catQuery += (j == 0 ? '':' OR ') + escapeQName(propName) + ':' + selectedCatNode.id;
+         }
+      }
+   }
+
+   return catQuery;
 }

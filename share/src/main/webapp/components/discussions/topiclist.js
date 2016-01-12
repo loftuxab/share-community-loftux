@@ -664,6 +664,9 @@
                isDefault: true
             }]
          });
+
+         var elements = Dom.getElementsByClassName('yui-button', 'span', 'prompt');
+         Dom.addClass(elements[0], 'alf-primary-button');
       },
       
       /**
@@ -956,7 +959,7 @@
                {
                   var response = YAHOO.lang.JSON.parse(oResponse.responseText);
                   this.widgets.dataTable.set("MSG_ERROR", response.message);
-                  this.widgets.dataTable.showTableMessage(response.message, YAHOO.widget.DataTable.CLASS_ERROR);
+                  this.widgets.dataTable.showTableMessage(Alfresco.util.encodeHTML(response.message), YAHOO.widget.DataTable.CLASS_ERROR);
                   if (oResponse.status == 404)
                   {
                      // Site or container not found - deactivate controls

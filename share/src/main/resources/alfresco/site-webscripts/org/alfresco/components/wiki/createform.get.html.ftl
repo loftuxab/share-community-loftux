@@ -10,6 +10,7 @@
    <#-- JavaScript Dependencies -->
    <@script src="${url.context}/res/modules/document-picker/document-picker.js" group="wiki"/>
    <@script src="${url.context}/res/components/object-finder/object-finder.js" group="wiki"/>
+   <@script src="${url.context}/res/components/common/common-component-style-filter-chain.js" group="wiki"/>
    <@script src="${url.context}/res/modules/simple-editor.js" group="wiki"/>
    <@script src="${url.context}/res/modules/taglibrary/taglibrary.js" group="wiki"/>
    <@script src="${url.context}/res/components/wiki/createform.js" group="wiki"/>
@@ -63,7 +64,7 @@
                   <div class="yui-u first">&nbsp;</div>
                   <div class="yui-u">
                      <input type="submit" id="${args.htmlid}-save-button" value="${msg("button.save")}" />
-                     <a href="${url.context}/page/site/${page.url.templateArgs.site}/wiki" id="${args.htmlid}-cancel-button">${msg("button.cancel")}</a>
+                     <a href="${url.context}/page/site/${page.url.templateArgs.site?url}/wiki" id="${args.htmlid}-cancel-button">${msg("button.cancel")}</a>
                   </div>
                </div>
             </fieldset>

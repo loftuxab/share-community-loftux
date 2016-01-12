@@ -94,7 +94,19 @@
                   <span id="${args.htmlid}-trashcan-img" class="trashcan" title="${msg("help.trashcan")}">&nbsp;</span>
                </div>
             </div>
-          </div>
+         </div>
+         <#if showWelcomePanelOptions>  
+            <div id="${args.htmlid}-welcome-preference" class="instructions alf-welcome-preference">
+               <h2>${msg("header.welcomePreference")}</h2>
+               <hr />
+               <div class="buttons alf-values" id="${args.htmlid}-welcomePreferenceButtonWrapper-div">
+                  <input id="${args.htmlid}-welcomePanelEnabled" type="radio" name="welcomePanelEnabled" value="true" <#if welcomePanelEnabled>checked</#if>>
+                  <label for="${args.htmlid}-welcomePanelEnabled">${msg("welcomePanel.enabled")}</label><br />
+                  <input id="${args.htmlid}-welcomePanelDisabled" type="radio" name="welcomePanelEnabled" value="false" <#if !welcomePanelEnabled>checked</#if>>
+                  <label for="${args.htmlid}-welcomePanelDisabled">${msg("welcomePanel.disabled")}</label>
+               </div>
+            </div>
+         </#if>
       <div class="actions">
          <hr />
             <div>

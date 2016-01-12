@@ -14,17 +14,24 @@
  */
 package org.alfresco.po.share.site;
 
-import org.alfresco.webdrone.RenderElement;
-import org.alfresco.webdrone.RenderTime;
-import org.alfresco.webdrone.WebDrone;
-import org.alfresco.webdrone.exception.PageException;
-import org.openqa.selenium.By;
-import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.WebElement;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import org.alfresco.po.HtmlPage;
+import org.alfresco.po.RenderElement;
+import org.alfresco.po.RenderTime;
+import org.alfresco.po.exception.PageException;
+import org.alfresco.po.share.FactorySharePage;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
+
+import java.util.logging.Logger;
+import java.util.logging.Logger;
 
 /**
  * Customize Site Page Object have to add pages, get current pages and get available pages.
@@ -38,18 +45,17 @@ public class CustomizeSitePage extends SitePage
 
     private static final By CURRENT_PAGES = By.cssSelector("#template_x002e_customise-pages_x002e_customise-site_x0023_default-currentPages-ul");
     private static final By AVAILABLE_PAGES = By.cssSelector("ul[id$='_default-availablePages-ul']");
+    private static final By AVAILABLE_PAGES_CONTAINER_ITEM = By.cssSelector("ul[id$='_default-availablePages-ul']>li");
     private static final By SAVE_BUTTON = By.cssSelector("#template_x002e_customise-pages_x002e_customise-site_x0023_default-save-button-button");
     private static final By CANCEL_BUTTON = By.cssSelector("#template_x002e_customise-pages_x002e_customise-site_x0023_default-save-button-button");
     private static final By THEME_MENU = By.cssSelector("#template_x002e_customise-pages_x002e_customise-site_x0023_default-theme-menu");
     private static final By DOCUMENT_LIB = By.cssSelector("li[id$='_default-page-documentlibrary']");
     private static final By CURRENT_PAGES_CONTAINER = By.xpath("//ul[contains(@id, '_default-currentPages-ul')]/..");
-    private static final By CURRENT_PAGES_CONTAINER_ITEM = By.cssSelector("ul[id$='_default-currentPages-ul']>li");
+    //private static final By LAST_AVAILABLE_PAGE = By.cssSelector("ul[id$='_default-availablePages-ul']:last-child li[class$='dnd-draggable']:last-child");
+    private static final By LAST_AVAILABLE_PAGE = By.xpath("//ul[contains(@id, '_default-availablePages-ul')]/..//li[@class='customise-pages-page-list-item dnd-draggable'][last()]");
+    private static final By LAST_CURRENT_PAGE = By.xpath("//ul[contains(@id, '_default-currentPages-ul')]/..//li[@class='customise-pages-page-list-item dnd-draggable'][last()]");
+    private static final By CURRENT_PAGES_CONTAINER_ITEM = By.cssSelector("li[class$='_default-currentPages-ul']>li");
     private static final String PARENT_AVAILABLE_PAGES_XPATH = "/parent::ul[contains(@id,'_default-currentPages-ul')]";
-
-    public CustomizeSitePage(WebDrone drone)
-    {
-        super(drone);
-    }
 
     @SuppressWarnings("unchecked")
     @Override
@@ -58,14 +64,6 @@ public class CustomizeSitePage extends SitePage
         elementRender(timer, RenderElement.getVisibleRenderElement(AVAILABLE_PAGES), RenderElement.getVisibleRenderElement(CURRENT_PAGES),
                 RenderElement.getVisibleRenderElement(SAVE_BUTTON), RenderElement.getVisibleRenderElement(CANCEL_BUTTON),
                 RenderElement.getVisibleRenderElement(THEME_MENU));
-        return this;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public CustomizeSitePage render(long time)
-    {
-        render(new RenderTime(time));
         return this;
     }
 
@@ -99,7 +97,7 @@ public class CustomizeSitePage extends SitePage
 
     private List<SitePageType> getPages(By locator)
     {
-        WebElement currentPageElement = drone.find(locator);
+        WebElement currentPageElement = driver.findElement(locator);
         List<SitePageType> currentPageTypes = new ArrayList<SitePageType>();
         SitePageType[] pageTypes = SitePageType.values();
         for (SitePageType pageType : pageTypes)
@@ -112,6 +110,62 @@ public class CustomizeSitePage extends SitePage
         return currentPageTypes;
     }
 
+    private int getLastAvailablePageX()
+    {
+
+        try
+        {
+            getCurrentPage();
+            return  driver.findElement(LAST_AVAILABLE_PAGE).getLocation().getX();
+        }
+        catch (NoSuchElementException n)
+        {
+        }
+        return 0;
+    }
+
+    private int getLastAvailablePageY()
+    {
+
+        try
+        {
+            getCurrentPage();
+            return  driver.findElement(LAST_AVAILABLE_PAGE).getLocation().getY();
+        }
+        catch (NoSuchElementException n)
+        {
+        }
+        return 0;
+    }
+
+    private int getLastCurrentPageX()
+    {
+
+        try
+        {
+            getCurrentPage();
+            return driver.findElement(LAST_CURRENT_PAGE).getLocation().getX();
+        }
+        catch (NoSuchElementException n)
+        {
+        }
+        return 0;
+    }
+
+    private int getLastCurrentPageY()
+    {
+
+        try
+        {
+            getCurrentPage();
+            return  driver.findElement(LAST_CURRENT_PAGE).getLocation().getY();
+        }
+        catch (NoSuchElementException n)
+        {
+        }
+        return 0;
+    }
+
     /**
      * Add the Site Pages to Site.
      *
@@ -119,7 +173,7 @@ public class CustomizeSitePage extends SitePage
      */
 //    public SiteDashboardPage addPages(List<SitePageType> pageTypes)
 //    {
-//       WebElement target = drone.findAndWait(CURRENT_PAGES_CONTAINER_ITEM);
+//       WebElement target = driver.findElement(CURRENT_PAGES_CONTAINER_ITEM);
 //
 //        if (getAvailablePages().containsAll(pageTypes))
 //        {
@@ -129,7 +183,7 @@ public class CustomizeSitePage extends SitePage
 //                {
 //                    target.click();
 //                    waitUntilAlert();
-//                    drone.dragAndDrop(drone.findAndWait(sitePageType.getLocator()),target);
+//                    dragAndDrop(driver.findElement(sitePageType.getLocator()),target);
 //                    waitUntilAlert();
 //                }
 //                catch (TimeoutException e)
@@ -146,9 +200,9 @@ public class CustomizeSitePage extends SitePage
 //        {
 //            throw new PageException("Not all pages were added!");
 //        }
-//        drone.findAndWait(SAVE_BUTTON).click();
+//        driver.findElement(SAVE_BUTTON).click();
 //        waitUntilAlert();
-//        return drone.getCurrentPage().render();
+//        return getCurrentPage();
 //    }
 
     /**
@@ -157,9 +211,9 @@ public class CustomizeSitePage extends SitePage
      * @param pageTypes List<SitePageType>
      * @return SiteDashboardPage
      */
-    public SiteDashboardPage addPages (List<SitePageType> pageTypes)
+    public HtmlPage addPages (List<SitePageType> pageTypes)
     {
-        WebElement target = drone.findAndWait(CURRENT_PAGES_CONTAINER);
+        WebElement target = driver.findElement(CURRENT_PAGES_CONTAINER);
 
         if (getAvailablePages().containsAll(pageTypes))
         {
@@ -167,11 +221,9 @@ public class CustomizeSitePage extends SitePage
             {
                 try
                 {
-//                    WebDriver webDriver = ((WebDroneImpl) drone).getDriver();
-//                    Actions builder = new Actions(webDriver);
-                    WebElement elem = drone.findAndWait(theTypes.getLocator());
-                    drone.executeJavaScript(String.format("window.scrollTo(0, '%s')", target.getLocation().getY()));
-                    drone.dragAndDrop(elem, target);
+                    WebElement elem = driver.findElement(theTypes.getLocator());
+                    WebElement dropZone = driver.findElement(By.cssSelector("ul[id$='default-currentPages-ul']"));
+                    new Actions(driver).dragAndDrop(elem, dropZone).build().perform();
                 }
                 catch (TimeoutException e)
                 {
@@ -187,9 +239,9 @@ public class CustomizeSitePage extends SitePage
         {
             throw new PageException("Not all pages were added!");
         }
-        drone.findAndWait(SAVE_BUTTON).click();
+        driver.findElement(SAVE_BUTTON).click();
         waitUntilAlert();
-        return drone.getCurrentPage().render();
+        return getCurrentPage();
     }
 
     /**
@@ -197,11 +249,11 @@ public class CustomizeSitePage extends SitePage
      *
      * @return SiteDashboardPage
      */
-    public SiteDashboardPage addAllPages ()
+    public HtmlPage addAllPages ()
     {
         List<SitePageType> allThePages = getAvailablePages();
         addPages(allThePages);
-        return drone.getCurrentPage().render();
+        return getCurrentPage();
     }
 
     /**

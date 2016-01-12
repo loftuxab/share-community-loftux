@@ -25,7 +25,7 @@ import static org.testng.Assert.assertTrue;
 
 import org.alfresco.po.share.DashBoardPage;
 import org.alfresco.po.share.dashlet.AbstractSiteDashletTest;
-import org.alfresco.po.share.util.SiteUtil;
+
 import org.alfresco.test.FailedTestListener;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -39,32 +39,35 @@ import org.testng.annotations.Test;
  * @since 1.6.1
  */
 @Listeners(FailedTestListener.class)
-@Test(groups = "Enterprise4.1")
+@Test(groups = { "Enterprise-only" })
 public class CustomizeSiteDashboardPageTest extends AbstractSiteDashletTest
 {
     DashBoardPage dashBoard;
     CustomiseSiteDashboardPage customizeSiteDashboardPage;
 
-    @BeforeClass(groups = "Enterprise4.1")
+    @BeforeClass
     public void loadFile() throws Exception
     {
         dashBoard = loginAs(username, password);
         siteName = "customizeSiteDashboardPage" + System.currentTimeMillis();
-        SiteUtil.createSite(drone, siteName, "description", "Public");
+        siteUtil.createSite(driver, username, password, siteName, "description", "Public");
         navigateToSiteDashboard();
     }
 
-    @AfterClass(groups = "Enterprise4.1")
+    @AfterClass
     public void tearDown()
     {
-        SiteUtil.deleteSite(drone, siteName);
+        siteUtil.deleteSite(username, password, siteName);
     }
 
     @Test
     public void selectCustomizeDashboard() throws Exception
     {
-        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard();
-        assertTrue(drone.getCurrentPage().render() instanceof CustomiseSiteDashboardPage);
+        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard().render();
+        assertTrue(resolvePage(driver).render() instanceof CustomiseSiteDashboardPage);
+        assertFalse(customizeSiteDashboardPage.isGetStartedPanelDisplayed());
+        assertFalse(customizeSiteDashboardPage.isShowOnDashboardDisplayed());
+        assertFalse(customizeSiteDashboardPage.isHideFromDashboardDisplayed());
     }
 
 
@@ -86,7 +89,7 @@ public class CustomizeSiteDashboardPageTest extends AbstractSiteDashletTest
     public void checkAddDashletToColumn()
     {
         siteDashBoard = customizeSiteDashboardPage.addDashlet(SITE_NOTICE, 1);
-        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard();
+        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard().render();
         assertTrue(customizeSiteDashboardPage.isDashletInColumn(SITE_NOTICE, 1));
         assertTrue(customizeSiteDashboardPage.getDashletsCountIn(1) == 2);
     }
@@ -95,7 +98,7 @@ public class CustomizeSiteDashboardPageTest extends AbstractSiteDashletTest
     public void checkRemoveDashlet()
     {
         siteDashBoard = customizeSiteDashboardPage.remove(SITE_NOTICE);
-        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard();
+        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard().render();
         assertFalse(customizeSiteDashboardPage.isDashletInColumn(SITE_NOTICE, 1));
         assertTrue(customizeSiteDashboardPage.getDashletsCountIn(1) == 1);
     }
@@ -105,23 +108,24 @@ public class CustomizeSiteDashboardPageTest extends AbstractSiteDashletTest
     public void selectChangeLayout() throws Exception
     {
         customizeSiteDashboardPage.selectChangeLayout();
-        assertTrue(drone.getCurrentPage().render() instanceof CustomiseSiteDashboardPage);
+        assertTrue(resolvePage(driver).render() instanceof CustomiseSiteDashboardPage);
     }
 
     @Test(dependsOnMethods = "selectChangeLayout")
     public void checkAddNewLayout()
     {
         customizeSiteDashboardPage.selectNewLayout(4);
-        assertTrue(drone.getCurrentPage().render() instanceof CustomiseSiteDashboardPage);
+        assertTrue(resolvePage(driver).render() instanceof CustomiseSiteDashboardPage);
         assertTrue(customizeSiteDashboardPage.getDashletsCountIn(3) == 0);
         assertTrue(customizeSiteDashboardPage.getDashletsCountIn(4) == 0);
     }
 
+ /**
     @Test(dependsOnMethods = "checkAddNewLayout")
     public void checkAddAllDashlets()
     {
         siteDashBoard = customizeSiteDashboardPage.addAllDashlets();
-        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard();
+        customizeSiteDashboardPage = siteDashBoard.getSiteNav().selectCustomizeDashboard().render();
         assertTrue(customizeSiteDashboardPage.getDashletsCountIn(1) == 5);
         assertTrue(customizeSiteDashboardPage.getDashletsCountIn(2) == 5);
         assertTrue(customizeSiteDashboardPage.getDashletsCountIn(3) == 5);
@@ -132,7 +136,8 @@ public class CustomizeSiteDashboardPageTest extends AbstractSiteDashletTest
     public void selectDashboard() throws Exception
     {
         customizeSiteDashboardPage.selectDashboard(SiteLayout.THREE_COLUMN_WIDE_CENTRE);
-        assertTrue(drone.getCurrentPage().render() instanceof SiteDashboardPage);
+        assertTrue(resolvePage(driver).render() instanceof SiteDashboardPage);
     }
+**/
 
 }

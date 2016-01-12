@@ -25,6 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.servlet.http.HttpSession;
 
+import org.alfresco.web.scripts.ShareManifest;
 import org.alfresco.web.site.servlet.MTAuthenticationFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -53,6 +54,7 @@ public class EditionInterceptor extends AbstractWebFrameworkInterceptor
 {
     /** public name of the value in the RequestContext */
     public static final String EDITION_INFO = "editionInfo";
+    public static final String KEY_DOCS_EDITION = "docsEdition";
     
     public static final String ENTERPRISE_EDITION = EditionInfo.ENTERPRISE_EDITION;
     public static final String TEAM_EDITION = EditionInfo.TEAM_EDITION;
@@ -60,12 +62,24 @@ public class EditionInterceptor extends AbstractWebFrameworkInterceptor
     public static final String UNKNOWN_HOLDER = EditionInfo.UNKNOWN_HOLDER;
     
     private static Log logger = LogFactory.getLog(EditionInterceptor.class);
-    
+
+    /*
+     * These are maintained as static variables so that they don't have to be recreated 
+     * upon each thread's call to the preHandle method.
+     */
     private static EditionInfo EDITIONINFO = null;
+    private static DocsEdition docsEdition = null;
+    
     private static volatile boolean outputInfo = false;
     private static volatile boolean outputEditionInfo = false;
     private static final ReadWriteLock editionLock = new ReentrantReadWriteLock();
+
+    private ShareManifest shareManifest;
     
+    public void setShareManifest(ShareManifest shareManifest)
+    {
+        this.shareManifest = shareManifest;
+    }
     
     /* (non-Javadoc)
      * @see org.springframework.web.context.request.WebRequestInterceptor#preHandle(org.springframework.web.context.request.WebRequest)
@@ -93,15 +107,15 @@ public class EditionInterceptor extends AbstractWebFrameworkInterceptor
                         Response response = conn.call("/api/admin/restrictions?guest=true");
                         if (response.getStatus().getCode() == Status.STATUS_UNAUTHORIZED)
                         {
-                            // if this occurs we may be running a multi-tennant repository or guest auth is disabled
+                            // if this occurs we may be running a multi-tenant repository or guest auth is disabled
                             if (MTAuthenticationFilter.getCurrentServletRequest() != null)
                             {
                                 HttpSession session = MTAuthenticationFilter.getCurrentServletRequest().getSession(false);
                                 if (session != null)
                                 {
-                                    // we try now that a Session is aquired and we have an authenticated user
+                                    // we try now that a Session is acquired and we have an authenticated user
                                     // this is the only time that we can successfully retrieve the license information
-                                    // when the repo is in multi-tennant mode - as guest auth is not supported otherwise
+                                    // when the repo is in multi-tenant mode - as guest auth is not supported otherwise
                                     conn = rc.getServiceRegistry().getConnectorService().getConnector(
                                             "alfresco", (String)session.getAttribute(UserFactory.SESSION_ATTRIBUTE_KEY_USER_ID), session);
                                     response = conn.call("/api/admin/restrictions");
@@ -117,6 +131,7 @@ public class EditionInterceptor extends AbstractWebFrameworkInterceptor
                         if (response.getStatus().getCode() == Status.STATUS_OK)
                         {
                             EditionInfo editionInfo = new EditionInfo(response.getResponse());
+                            docsEdition = new DocsEdition(editionInfo.getEdition(), shareManifest.getSpecificationVersion(), false);
                             if (editionInfo.getValidResponse())
                             {
                                logger.info("Successfully retrieved license information from Alfresco.");
@@ -132,6 +147,7 @@ public class EditionInterceptor extends AbstractWebFrameworkInterceptor
                                 
                                 // set edition info for current thread
                                 ThreadLocalRequestContext.getRequestContext().setValue(EDITION_INFO, editionInfo);
+                                ThreadLocalRequestContext.getRequestContext().setValue(KEY_DOCS_EDITION, docsEdition);
                                 
                                 // NOTE: We do NOT assign to the EDITIONINFO so that we re-evaluate next time.
                             }
@@ -175,6 +191,8 @@ public class EditionInterceptor extends AbstractWebFrameworkInterceptor
                             // set a value so scripts have something to work with - the interceptor will retry later
                             EditionInfo info = new EditionInfo();
                             ThreadLocalRequestContext.getRequestContext().setValue(EDITION_INFO, info);
+                            DocsEdition tempDocsEdition = new DocsEdition();
+                            ThreadLocalRequestContext.getRequestContext().setValue(KEY_DOCS_EDITION, tempDocsEdition);
                             if (logger.isDebugEnabled())
                                 logger.debug("Current EditionInfo: " + info);
                         }
@@ -193,6 +211,7 @@ public class EditionInterceptor extends AbstractWebFrameworkInterceptor
             if (EDITIONINFO != null)
             {
                 ThreadLocalRequestContext.getRequestContext().setValue(EDITION_INFO, EDITIONINFO);
+                ThreadLocalRequestContext.getRequestContext().setValue(KEY_DOCS_EDITION, docsEdition);
             }
         }
         finally

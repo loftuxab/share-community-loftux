@@ -14,12 +14,14 @@
          <css-class>logo-ent</css-class>
       </login>
    </config>
-   
-   <config evaluator="string-compare" condition="HelpPages" replace="true">
-      <help-pages>
-         <share-help>http://docs.alfresco.com/5.0/topics/sh-uh-welcome.html</share-help>
-         <share-tutorial>http://docs.alfresco.com/5.0/topics/alfresco-video-tutorials.html</share-tutorial>
-      </help-pages>
+
+   <config evaluator="string-compare" condition="Users" replace="true">
+      <users>
+         <!-- minimum length for username and password -->
+         <username-min-length>2</username-min-length>
+         <password-min-length>3</password-min-length>
+         <show-authorization-status>true</show-authorization-status>
+      </users>
    </config>
 
    <!-- ************************************** -->

@@ -16,7 +16,7 @@ package org.alfresco.po.share.workflow;
 
 import java.util.List;
 
-import org.alfresco.webdrone.WebDrone;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
@@ -40,6 +40,7 @@ public enum WorkFlowType
     GROUP_REVIEW_AND_APPROVE_JBPM("Group Review And Approve (JBPM)"),
     PARALLEL_REVIEW_AND_APPROVE("Parallel Review And Approve (JBPM)"),
     POOLED_REVIEW_AND_APPROVE_JBPM("Pooled Review And Approve (JBPM)"),
+    HANDLE_CONTACT_REQUEST("Handle Contact Request"),
     REVIEW_AND_APPROVE_JBPM("Review And Approve (JBPM)");
 
     private String title;
@@ -54,10 +55,10 @@ public enum WorkFlowType
         return title;
     }
 
-    protected WebElement getTaskTypeElement(WebDrone drone)
+    protected WebElement getTaskTypeElement(WebDriver driver)
     {
         By dropDown = By.cssSelector("div[id$='default-workflow-definition-menu'] li span.title");
-        List<WebElement> liElements = drone.findAndWaitForElements(dropDown);
+        List<WebElement> liElements = driver.findElements(dropDown);
         for (WebElement liElement : liElements)
         {
             String elementText = liElement.getText().trim();

@@ -43,13 +43,6 @@ function main()
       {
          totalResults = obj.length;
          memberships = obj.slice(0, maxItems);
-
-         var member, userStatus;
-         for (var i = 0, j = memberships.length; i < j; i++)
-         {
-            member = memberships[i];
-            userStatus = member.authority.userStatus;
-         }
          memberships.sort(sortByName);
       }
    }
@@ -86,6 +79,7 @@ function main()
       }
    };
    model.widgets = [dashletResizer, dashletTitleBarActions];
+   model.addUsersPage = config.scoped["SitePages"]["additional-pages"].getChildValue("add-users");
 }
 
 main();

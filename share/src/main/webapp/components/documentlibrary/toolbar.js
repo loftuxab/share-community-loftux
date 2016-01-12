@@ -81,6 +81,7 @@
          YAHOO.Bubbling.on("documentDragOver", this.onDocumentDragOver, this);
          YAHOO.Bubbling.on("documentDragOut", this.onDocumentDragOut, this);
          YAHOO.Bubbling.on("registerAction", this.onRegisterAction, this);
+         YAHOO.Bubbling.on("docLibTreeLoadComplete", this._generateBreadcrumb, this);
 //      }
 
       return this;
@@ -250,7 +251,8 @@
                // Create content actions
                if (this.options.createContentActions.length !== 0)
                {
-                  var menuItems = [], menuItem, content, url, config, html, li;
+                  var menuItems = [], menuItem, content, url, config, html, li, folderMenuItem, folderMenuItemIndex;
+
                   for (var i = 0; i < this.options.createContentActions.length; i++)
                   {
                      // Create menu item from config
@@ -298,6 +300,13 @@
                      menuItem = new YAHOO.widget.MenuItem(li, config);
 
                      menuItems.push(menuItem);
+
+                     // Store reference to folder info so we can use it for filtering later:
+                     if (content.id && content.id === "folder")
+                     {
+                        folderMenuItem = menuItem;
+                        folderMenuItemIndex = i;
+                     }
                   }
                   createContentMenu.addItems(menuItems, groupIndex);
                   groupIndex++;
@@ -367,6 +376,16 @@
                      templateFoldersMenu.subscribe("click", this.onCreateByTemplateFolderClick, this, true);
                   }
                }
+
+               createContentMenu.subscribe("beforeShow", this.onCreateContentMenuBeforeShow, {
+                  createContentMenu: createContentMenu,
+                  folderMenuItem: folderMenuItem || null,
+                  folderMenuItemIndex: folderMenuItemIndex || 0,
+                  createFolderByTemplateItem: createFolderByTemplate || null,
+                  createFolderByTemplateItemIndex: 1,
+                  createFolderByTemplateGroupIndex: groupIndex-1,
+                  context: this
+               }, true);
 
                // Render menu with all new menu items
                createContentMenu.render();
@@ -714,7 +733,27 @@
             }
          };
       },
-      
+
+      /**
+       * Filter the content menu before we show it
+       *
+       * @constructor
+       */
+      onCreateContentMenuBeforeShow: function DLTB_onCreateContentMenuBeforeShow()
+      {
+         if (this.createContentMenu && this.folderMenuItem)
+         {
+            // If the containing folder is virtual, then hide the create folder option.
+            if (this.context.isVirtualFolder()){
+               Dom.addClass(this.folderMenuItem.id, "hidden");
+               Dom.addClass(this.createFolderByTemplateItem.id, "hidden");
+            } else {
+               Dom.removeClass(this.folderMenuItem.id, "hidden");
+               Dom.removeClass(this.createFolderByTemplateItem.id, "hidden");
+            }
+         }
+      },
+
       /**
        * New Folder button click handler
        *
@@ -1354,6 +1393,11 @@
                   Dom.removeClass(syncToCloudButtonDiv, "hidden");
                   Dom.addClass(unsyncFromCloudButtonDiv, "hidden");
                }
+               if(Alfresco.util.arrayContains(aspects, "vm:virtual"))
+               {
+                  Dom.addClass(unsyncFromCloudButtonDiv, "hidden");
+                  Dom.addClass(syncToCloudButtonDiv, "hidden");
+               }
             }
 
             var properties = parent.properties;
@@ -1854,8 +1898,43 @@
             newPath,
             eCrumb,
             eIcon,
-            eFolder;
-         
+            eFolder,
+            DocListTree = Alfresco.util.ComponentManager.findFirst("Alfresco.DocListTree"),
+            selectedNode;
+
+         // Fetch Selected Node from tree view if possible.
+         // This is used to annotate the breadcrumb with icons without having to do a recursive query for node metadata
+         if (DocListTree && DocListTree.selectedNode)
+         {
+            selectedNode = DocListTree.selectedNode;
+         }
+
+         /**
+          * Fetch the class used in the DocListTree.
+          * @param levels
+          */
+         var fnGetClass = function DLTB__fnGetClass(levels)
+         {
+            if (!selectedNode)
+            {
+               return;
+            }
+
+            var queryNode = selectedNode;
+            if (levels)
+            {
+               for (var k = levels; k > 1;k--)
+               {
+                  if (queryNode.parent)
+                  {
+                     queryNode = queryNode.parent;
+                  }
+               }
+            }
+
+            return queryNode.customCls;
+         };
+
          for (var i = 0, j = paths.length; i < j; ++i)
          {
             newPath = paths.slice(0, i+1).join("/");
@@ -1875,6 +1954,7 @@
                eIcon.on("click", fnBreadcrumbClick, newPath);
                eIcon.addClass("icon");
                eIcon.addClass("filter-" + $html(this.currentFilter.filterId));
+               eIcon.addClass(fnGetClass(j - i));
                eCrumb.appendChild(eIcon);
             }
 
@@ -1972,13 +2052,14 @@
        */
       _getRssFeedUrl: function DLTB__getRssFeedUrl()
       {
-         var params = YAHOO.lang.substitute("{type}/site/{site}/{container}" + (this.currentPath !== "/" ? "{path}" : ""),
-         {
-            type: this.modules.docList.options.showFolders ? "all" : "documents",
-            site: encodeURIComponent(this.options.siteId),
-            container: encodeURIComponent(this.options.containerId),
-	    path: Alfresco.util.encodeURIPath(this.currentPath)
-         });
+          var params = YAHOO.lang.substitute("{type}/site/{site}/{container}" + 
+                  (this.currentFilter.filterId === "path" ? (this.currentPath !== "/" ? "{path}" : "") : ""),
+          {
+              type: this.modules.docList.options.showFolders ? "all" : "documents",
+              site: encodeURIComponent(this.options.siteId),
+              container: encodeURIComponent(this.options.containerId),
+              path: Alfresco.util.encodeURIPath(this.currentPath)
+          });
 
          params += "?filter=" + encodeURIComponent(this.currentFilter.filterId);
          if (this.currentFilter.filterData)
@@ -2004,6 +2085,20 @@
             this.widgets.rssFeed.set("href", href);
             Alfresco.util.enableYUIButton(this.widgets.rssFeed);
          }
+      },
+
+      /**
+       * Is the currently displayed folder a virtual one?
+       *
+       * @returns Boolean
+       */
+      isVirtualFolder: function DLTB_isVirtualFolder()
+      {
+         var parentAspects = Alfresco.util.findValueByDotNotation(this, "doclistMetadata.parent.aspects"),
+            isVirtualFolder = Alfresco.util.arrayContains(parentAspects, "vm:virtual");
+
+         return isVirtualFolder;
+
       }
    }, true);
 })();

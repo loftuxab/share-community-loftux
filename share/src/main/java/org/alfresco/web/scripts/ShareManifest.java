@@ -21,6 +21,7 @@ package org.alfresco.web.scripts;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,8 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import org.alfresco.error.AlfrescoRuntimeException;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.extensions.webscripts.processor.BaseProcessorExtension;
 
@@ -38,6 +41,11 @@ import org.springframework.extensions.webscripts.processor.BaseProcessorExtensio
  */
 public class ShareManifest extends BaseProcessorExtension
 {
+    public static final String MANIFEST_SPECIFICATION_VERSION = "Specification-Version";
+    public static final String MANIFEST_IMPLEMENTATION_VERSION = "Implementation-Version";
+    public static final String MANIFEST_SPECIFICATION_TITLE   = "Specification-Title";
+    public static final String MANIFEST_IMPLEMENTATION_TITLE  = "Implementation-Title";
+
     private final Resource resource; 
     private Manifest manifest;
     
@@ -63,7 +71,7 @@ public class ShareManifest extends BaseProcessorExtension
     /**
      * Read the manifest file that was specified in the constructor.
      */
-    protected void readManifest()
+    public void readManifest()
     {
         try (InputStream is = resource.getInputStream())
         {
@@ -83,7 +91,15 @@ public class ShareManifest extends BaseProcessorExtension
      */
     public String mainAttributeValue(String key)
     {
-        return manifest.getMainAttributes().getValue(key);
+        String value = null;
+        
+        Attributes attributes = manifest.getMainAttributes();
+        if (attributes != null)
+        {
+            value = attributes.getValue(key);
+        }
+        
+        return value;
     }
     
     /**
@@ -111,7 +127,15 @@ public class ShareManifest extends BaseProcessorExtension
      */
     public List<String> mainAttributeNames()
     {
-        return namesToStrings(manifest.getMainAttributes().keySet());
+        List<String> names = Collections.emptyList();
+
+        Attributes attributes = manifest.getMainAttributes();
+        if (attributes != null)
+        {
+            names = namesToStrings(attributes.keySet());
+        }
+        
+        return names;
     }
     
     /**
@@ -123,7 +147,15 @@ public class ShareManifest extends BaseProcessorExtension
      */
     public String attributeValue(String section, String key)
     {
-        return manifest.getAttributes(section).getValue(key);
+        String value = null;
+        
+        Attributes attributes = manifest.getAttributes(section);
+        if (attributes != null)
+        {
+            value = attributes.getValue(key);
+        }
+        
+        return value;
     }
     
     /**
@@ -152,7 +184,15 @@ public class ShareManifest extends BaseProcessorExtension
      */
     public List<String> attributeNames(String section)
     {
-        return namesToStrings(manifest.getAttributes(section).keySet());
+        List<String> names = Collections.emptyList();
+
+        Attributes attributes = manifest.getAttributes(section);
+        if (attributes != null)
+        {
+            names = namesToStrings(attributes.keySet());
+        }
+        
+        return names;
     }
     
     /**
@@ -164,8 +204,6 @@ public class ShareManifest extends BaseProcessorExtension
     {
         return manifest.getEntries().keySet();
     }
-    
-    
     
     protected List<String> namesToStrings(Set<Object> names)
     {
@@ -181,5 +219,37 @@ public class ShareManifest extends BaseProcessorExtension
             strings.add(name.toString());
         }
         return strings;
+    }
+
+    /**
+     * Returns the version of the war that has been specified
+     * In general, prefer Specification Version over Implementation Version
+     * @return String a version number
+     */
+    public String getSpecificationVersion()
+    {
+        return getVersion(MANIFEST_SPECIFICATION_VERSION);
+    }
+
+    /**
+     * Returns the version of the war that has been implemented
+     * May be a SNAPSHOT version.
+     * @return String a version number
+     */
+    public String getImplementationVersion()
+    {
+        return getVersion(MANIFEST_IMPLEMENTATION_VERSION);
+    }
+
+    private String getVersion(String key)
+    {
+        String version = manifest.getMainAttributes().getValue(key);
+        if (StringUtils.isEmpty(version))
+        {
+            throw new AlfrescoRuntimeException("Invalid MANIFEST.MF: Share "+key
+                    +" is missing, are you using the valid MANIFEST.MF supplied with the Share.war?");
+
+        }
+        return version;
     }
 }

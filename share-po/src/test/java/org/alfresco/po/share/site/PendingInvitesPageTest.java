@@ -6,14 +6,14 @@ import static org.testng.Assert.assertTrue;
 
 import java.util.List;
 
-import org.alfresco.po.share.AbstractTest;
+import org.alfresco.po.AbstractTest;
 import org.alfresco.po.share.DashBoardPage;
 import org.alfresco.po.share.NewUserPage;
 import org.alfresco.po.share.UserSearchPage;
 import org.alfresco.po.share.enums.UserRole;
-import org.alfresco.po.share.util.SiteUtil;
+
 import org.alfresco.test.FailedTestListener;
-import org.alfresco.webdrone.exception.PageRenderTimeException;
+import org.alfresco.po.exception.PageRenderTimeException;
 import org.openqa.selenium.WebElement;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 
 /**
  * Class to hold tests for Pending Invites page object
+ * Pending Invites will be created for external users only
  *
  * @author Marina.Nenadovets
  */
@@ -32,23 +33,32 @@ import org.testng.annotations.Test;
 public class PendingInvitesPageTest extends AbstractTest
 {
 
-    InviteMembersPage membersPage;
+    //InviteMembersPage membersPage;
+    AddUsersToSitePage membersPage;
     SiteMembersPage siteMembersPage;
     PendingInvitesPage pendingInvitesPage;
     DashBoardPage dashBoard;
     String siteName;
     List<WebElement> inviteeList;
+    String userName;
     String userNameTest;
     public static long refreshDuration = 15000;
 
     @BeforeClass
     public void instantiatePendingInvite() throws Exception
     {
-        userNameTest = "user" + System.currentTimeMillis() + "@test.com";
+        userName = "user" + System.currentTimeMillis();
+        userNameTest = userName + "@test.com";
         siteName = "PendingInvitesTest" + System.currentTimeMillis();
+        
+        System.out.println("SITE ******** " + siteName);
+        System.out.println("USER ******** " + userNameTest);
+        
+        
         dashBoard = loginAs(username, password);
 
         // Creating new user.
+        /**
         UserSearchPage page = dashBoard.getNav().getUsersPage().render();
         NewUserPage newPage = page.selectNewUser().render();
         newPage.inputFirstName(userNameTest);
@@ -60,18 +70,29 @@ public class PendingInvitesPageTest extends AbstractTest
         UserSearchPage userCreated = newPage.selectCreateUser().render();
         userCreated.searchFor(userNameTest).render();
         Assert.assertTrue(userCreated.hasResults());
-
+        **/
         // Creating a site.
         CreateSitePage createSitePage = dashBoard.getNav().selectCreateSite().render();
         SitePage site = createSitePage.createNewSite(siteName).render();
 
         // Invite a user
-        List<String> searchUsers = null;
-        membersPage = site.getSiteNav().selectInvite().render();
+        //List<String> searchUsers = null;
+        //membersPage = site.getSiteNav().selectInvite().render();
+ 
+        membersPage = site.getSiteNav().selectAddUser().render();
+        membersPage.enterExternalUserFirstName(userNameTest);
+        membersPage.enterExternalUserLastName(userNameTest);
+        membersPage.enterExternalUserEmail(userNameTest);
+        membersPage.selectExternalUser();
+        membersPage.setAllRolesTo(UserRole.CONSUMER);
+        membersPage.clickAddUsersButton();
+        
+        
+        /**
         for (int searchCount = 1; searchCount <= retrySearchCount; searchCount++)
         {
-            searchUsers = membersPage.searchUser(userNameTest);
-            waitInSeconds(1);
+            //searchUsers = membersPage.searchUser(userNameTest);
+            searchUsers = membersPage.searchUser("user");
             try
             {
                 if (searchUsers != null && searchUsers.size() > 0 && searchUsers.get(0).toString().contains(userNameTest))
@@ -95,6 +116,7 @@ public class PendingInvitesPageTest extends AbstractTest
             {
             }
         }
+        **/
         siteMembersPage = site.getSiteNav().selectMembersPage().render();
     }
 
@@ -102,22 +124,20 @@ public class PendingInvitesPageTest extends AbstractTest
     public void navigateToPendingInvitesPage()
     {
         pendingInvitesPage = siteMembersPage.navigateToPendingInvites().render();
-        assertNotNull(pendingInvitesPage);
+         assertNotNull(pendingInvitesPage);
     }
 
     @Test(dependsOnMethods = "navigateToPendingInvitesPage")
     public void checkSearch()
     {
         pendingInvitesPage.search(userNameTest);
-        pendingInvitesPage.render();
-        waitInSeconds(1);
         assertEquals(pendingInvitesPage.getInvitees().size(), 1);
     }
 
     @Test(dependsOnMethods = "checkSearch")
     public void cancelInvite()
     {
-        pendingInvitesPage.cancelInvitation(userNameTest);
+        pendingInvitesPage.cancelInvitation(userName);
         assertNotNull(pendingInvitesPage);
         verifyInviteCancelled(userNameTest);
         assertTrue(verifyInviteCancelled(userNameTest), "The invite wasn't cancelled!");
@@ -126,9 +146,9 @@ public class PendingInvitesPageTest extends AbstractTest
     @AfterClass
     public void tearDown()
     {
-        SiteUtil.deleteSite(drone, siteName);
+        siteUtil.deleteSite(username, password, siteName);
     }
-
+    
     private boolean verifyInviteCancelled(String userName)
     {
         boolean cancelled = false;
