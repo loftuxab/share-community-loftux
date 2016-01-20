@@ -8,7 +8,6 @@ target
 projects/solr/source/solr/instance/lib/
 *.iml
 .idea
-projects/solr4/overlays
-projects/solr/overlays
+overlays
 projects/mmt/dependency-reduced-pom.xml
 projects/web-client/source/web/META-INF/MANIFEST.MF
