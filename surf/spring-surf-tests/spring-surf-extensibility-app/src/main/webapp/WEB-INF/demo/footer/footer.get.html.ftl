@@ -1,2 +1,2 @@
-<div class="copyright"><span>${msg("copyright.label")}</span></div>
+<div class="copyright"><span>${msg("copyright.label.byLoftux")}</span></div>
 
