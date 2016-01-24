@@ -11,3 +11,4 @@ projects/solr/source/solr/instance/lib/
 overlays
 projects/mmt/dependency-reduced-pom.xml
 projects/web-client/source/web/META-INF/MANIFEST.MF
+WebScript_Template_Replace.xml
