@@ -317,3 +317,9 @@
    margin-top: -0.5em;
    margin-bottom: -0.5em;
 }
+
+/* MNT-15283 */
+.share-form .form-container .caption
+{
+   display: none;
+}

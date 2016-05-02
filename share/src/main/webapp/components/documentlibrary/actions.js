@@ -504,25 +504,16 @@
             isCloud = (this.options.syncMode === "CLOUD"),
             zIndex = 0;
 
-         var displayPromptText = this.msg("message.confirm.delete", displayName);
-         if (jsNode.hasAspect("sync:syncSetMemberNode"))
+         
+         // Check if node is direct sync member node
+         var isDirectSSMN = (jsNode.hasAspect("sync:syncSetMemberNode") && $isValueSet(jsNode.properties)) ? jsNode.properties["sync:directSync"] === "true" : false;
+         var deleteRemoteFile = "";
+         if (!isCloud && isDirectSSMN)
          {
-            if (isCloud)
-            {
-        	   if (jsNode.hasAspect("sync:deleteOnPrem"))
-               {
-          	      displayPromptText += this.msg("actions.synced.cloud." + content + ".delete.on.prem", displayName);
-               }
-               else
-               {
-          	      displayPromptText += this.msg("actions.synced.cloud." + content + ".delete", displayName);
-               }
-            }
-            else
-            {
-                displayPromptText += this.msg("actions.synced." + content + ".delete", displayName);
-            }
+            deleteRemoteFile = '<div><input type="checkbox" id="requestDeleteRemote" class="requestDeleteRemote-checkBox"><span class="requestDeleteRemote-text">' + this.msg("sync.remove." + content + ".from.cloud", displayName) + '</span></div>';
          }
+         
+         var displayPromptText = this.msg("message.confirm.delete", displayName);
 
          if (this.fullscreen !== undefined && ( this.fullscreen.isWindowOnly || Dom.hasClass(this.id, 'alf-fullscreen')))
          {
@@ -542,8 +533,17 @@
                text: this.msg("button.delete"),
                handler: function dlA_onActionDelete_delete()
                {
+                  var requestDeleteRemote = isCloud ? false : Dom.getAttribute("requestDeleteRemote", "checked");
                   this.destroy();
-                  me._onActionDeleteConfirm.call(me, record);
+                  
+                  if (isDirectSSMN)
+                  {
+                     me._onActionDeleteSyncConfirm.call(me, record, requestDeleteRemote);
+                  }
+                  else
+                  {
+                     me._onActionDeleteConfirm.call(me, record);
+                  }
                }
             },
             {
@@ -555,56 +555,55 @@
                isDefault: true
             }
          ];
-			
-         if (jsNode.hasAspect("sync:syncSetMemberNode"))
-         {
-            displayPromptText += this.msg("actions.synced.remove-sync");
-            // The code further on down assumes that the unsync button is first
-            buttons.unshift({
-               text: this.msg("button.unsync"),
-               handler: function dlA_onActionCloudUnsync_unsync()
-               {
-                  var requestDeleteRemote = isCloud ? false : Dom.getAttribute("requestDeleteRemote", "checked");
-                    
-                  try
-                  {
-                     Alfresco.util.Ajax.request(
-                     {
-                        url: Alfresco.constants.PROXY_URI + "enterprise/sync/syncsetmembers/" + record.jsNode.nodeRef.uri + "?requestDeleteRemote=" + requestDeleteRemote,
-                        method: Alfresco.util.Ajax.DELETE,
-                        successCallback:{
-                           fn: function cloudSync_onCloudUnsync_success()
-                           {
-                           
-                              // MNT-15233: Delete Document pop-up isn't closed after Remove sync action is performed
-                              var displayPrompt = Dom.get('prompt');
-                              var buttonUnsync = displayPrompt.getElementsByTagName('button')[0];
-                              buttonUnsync.style.display = 'none';
-                              
-                              YAHOO.Bubbling.fire("metadataRefresh");
-                              Alfresco.util.PopupManager.displayMessage(
-                              {
-                                 text: me.msg("message.unsync.success")
-                              })
-                           },
-                           scope: me
-                        },
-                        failureMessage: me.msg("message.unsync.failure")
-                     });
-                  }
-                  catch (e) {}
-               }
-            });
-         }
+
          
          Alfresco.util.PopupManager.displayPrompt(
          {
             title: this.msg("actions." + content + ".delete"),
-            text: displayPromptText,
+
+            text: displayPromptText + deleteRemoteFile,
             noEscape: true,
             buttons: buttons,
             zIndex: zIndex
          }, parent);
+      },
+      
+      /**
+       * Delete sync record confirmed.
+       *
+       * @method _onActionDeleteSyncConfirm
+       * @param record {object} Object literal representing the file or folder to be actioned
+       * @param requestDeleteRemote {boolean} True if data should be removed also from destination, false otherwise.
+       * @private
+       */
+      _onActionDeleteSyncConfirm: function dlA__onActionDeleteSyncConfirm(record, requestDeleteRemote)
+      {
+          var jsNode = record.jsNode,
+          path = record.location.path,
+          fileName = record.location.file,
+          filePath = $combine(path, fileName),
+          displayName = record.displayName,
+          nodeRef = jsNode.nodeRef,
+          parentNodeRef = this.getParentNodeRef(record);
+
+          Alfresco.util.Ajax.request(
+          {
+             url: Alfresco.constants.PROXY_URI + "enterprise/sync/syncsetmembers/" + record.jsNode.nodeRef.uri + "?requestDeleteRemote=" + requestDeleteRemote,
+             method: Alfresco.util.Ajax.DELETE,
+             successCallback: {
+                fn: function cloudSync_onCloudUnsync_success()
+                {
+                   YAHOO.Bubbling.fire("metadataRefresh");
+                   Alfresco.util.PopupManager.displayMessage(
+                   {
+                      text: this.msg("message.unsync.success")
+                   });
+                   this._onActionDeleteConfirm.call(this, record);
+                },
+                scope: this
+             },
+             failureMessage: this.msg("message.unsync.failure")
+          });
       },
 
       /**
@@ -734,7 +733,8 @@
          "application/vnd.ms-excel.template.macroenabled.12": "Excel.Sheet",
          "application/vnd.ms-excel.addin.macroenabled.12": "Excel.Sheet",
          "application/vnd.ms-excel.sheet.binary.macroenabled.12": "Excel.Sheet",
-         "application/vnd.visio": "Visio.Drawing"
+         "application/vnd.visio": "Visio.Drawing",
+         "application/vnd.visio2013": "Visio.Drawing"
       },
 
       /**
@@ -1191,6 +1191,7 @@
          }
 
          var fileExtension = Alfresco.util.getFileExtension(record.location.file);
+         fileExtension = fileExtension != null ? fileExtension.toLowerCase() : fileExtension;
          var protocolHandler = this.getProtocolForFileExtension(fileExtension);
 
          if(protocolHandler === undefined)

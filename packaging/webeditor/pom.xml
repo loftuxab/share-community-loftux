@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.alfresco</groupId>
         <artifactId>alfresco-share-packaging</artifactId>
-        <version>5.1-SNAPSHOT</version>
+        <version>5.2-SNAPSHOT</version>
     </parent>
     <artifactId>alfresco-webeditor-distribution</artifactId>
     <packaging>pom</packaging>
@@ -79,14 +79,14 @@
                                     <version>${project.version}</version>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>org.springframework.extensions.surf</groupId>
+                                    <groupId>org.alfresco.surf</groupId>
                                     <artifactId>spring-webeditor</artifactId>
-                                    <version>${project.version}</version>
+                                    <version>${dependency.surf.version}</version>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>org.springframework.extensions.surf</groupId>
+                                    <groupId>org.alfresco.surf</groupId>
                                     <artifactId>spring-webeditor-client-jsp</artifactId>
-                                    <version>${project.version}</version>
+                                    <version>${dependency.surf.version}</version>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>com.yahoo.platform.yui</groupId>
