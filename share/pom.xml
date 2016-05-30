@@ -8,7 +8,7 @@
 
     <artifactId>share</artifactId>
     <packaging>war</packaging>
-    <name>Alfresco Share WAR</name>
+    <name>Alfresco Share WAR by Loftux AB</name>
     <description>Alfresco Share</description>
 
     <properties>
@@ -341,7 +341,7 @@
                                     <alfresco-core>${dependency.alfresco-core.version}</alfresco-core>
                                     <alfresco-jlan>${dependency.alfresco-jlan.version}</alfresco-jlan>
                                     <spring>${dependency.spring.version}</spring>
-                                    <surf>${project.version}</surf>
+                                    <surf>${dependency.surf.version}</surf>
                                     <aikau>${dependency.aikau.version}</aikau>
                                     <webscripts>${dependency.webscripts.version}</webscripts>
                                     <yui>${dependency.yui.version}</yui>
