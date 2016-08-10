@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2015 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share.site;
 
@@ -210,6 +221,19 @@ public class SiteNavigation extends AbstractSiteNavigation
         boolean val = isLinkActive(documentLibrary);
         return val;
     }
+    
+     /**
+     * Mimics the action of selecting the site
+     * Site Dashboard link under More drop down.
+     * 
+     * @return HtmlPage site calendar page object
+     */
+    public HtmlPage selectSiteDashboardPage()
+    {
+        clickMoreIfExist();
+        driver.findElement(SITE_DASHBOARD_LINK).click();
+        return getCurrentPage();
+    }
 
     /**
      * Mimics the action of selecting the site
@@ -305,6 +329,17 @@ public class SiteNavigation extends AbstractSiteNavigation
     }
 
     /**
+     * Check if Delete Site link is displayed in the site configuration drop down
+     * 
+     * @return
+     */
+    public boolean isDeleteSiteDisplayed()
+    {
+        selectConfigure();
+        return isLinkDisplayed(DELETE_SITE);
+    }
+
+   /**
      * Mimics the action of join Site.
      * 
      * @return {@link DashBoardPage}
@@ -323,7 +358,30 @@ public class SiteNavigation extends AbstractSiteNavigation
         }
         throw new PageException("Not able to find Join Site Link.");
     }
+    
+    /**
+     * Check if Wiki link is displayed in the site navigation header
+     * 
+     * @return
+     */
+    public boolean isWikiDisplayed()
+    {
+        return isLinkDisplayed(WIKI_LINK);
+    }
 
+    /**
+     * Mimics the action of clicking on Delete Site link in site configuration drop down.
+     *
+     * @return {@link DeleteSitePage}
+     */
+    public HtmlPage selectDeleteSite()
+    {
+        selectConfigure();
+        driver.findElement(DELETE_SITE).click();
+        driver.findElement(By.xpath("//span[text()='OK']")).click();
+        return getCurrentPage();
+    }
+    
     /**
      * Mimics the action of leave Site.
      * 

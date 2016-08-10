@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2012 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share;
 
@@ -590,7 +601,7 @@ public class Navigation extends PageElement
     {
         List<String> recentSites = getRecentSitesPresent();
         findAndWait(By.linkText(recentSites.get(0))).click();
-        return factoryPage.instantiatePage(driver, SiteDashboardPage.class);
+        return getCurrentPage();
     }
 
     /**
@@ -654,6 +665,22 @@ public class Navigation extends PageElement
         driver.navigate().refresh();
         selectSitesDropdown();
         driver.findElement(By.id("HEADER_SITES_MENU_FAVOURITES_text")).click();
+        return getCurrentPage();
+    }
+    
+    /**
+     * Select site from favourites.
+     * 
+     * @return HtmlPage
+     */
+    public HtmlPage selectSiteFromFavourties(String siteName)
+    {
+        // Refresh is needed since sites added in favourites dont reflect.
+        driver.navigate().refresh();
+        selectSitesDropdown();
+        driver.findElement(By.id("HEADER_SITES_MENU_FAVOURITES_text")).click();
+        //select site name
+        findAndWait(By.xpath(String.format("//a[contains(text(), '%s')]", siteName))).click();
         return getCurrentPage();
     }
 
@@ -850,7 +877,7 @@ public class Navigation extends PageElement
         try
         {
         	//Check if modal is already open
-        	WebElement cancelBtn = driver.findElement(By.cssSelector("span[id$='CANCEL_label']"));
+        	WebElement cancelBtn = driver.findElement(By.cssSelector(".footer .cancellationButton .dijitButtonNode"));
         	if(cancelBtn.isDisplayed())
         	{
         		cancelBtn.click();

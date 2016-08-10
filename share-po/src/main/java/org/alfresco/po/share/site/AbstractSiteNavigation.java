@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2015 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share.site;
 
@@ -37,11 +48,12 @@ public abstract class AbstractSiteNavigation extends SharePage
     protected static final By CUSTOMIZE_SITE_DASHBOARD = By.cssSelector("#HEADER_CUSTOMIZE_SITE_DASHBOARD_text");
     protected static final By EDIT_SITE_DETAILS = By.cssSelector("#HEADER_EDIT_SITE_DETAILS_text");
     
-    
+    protected static final By DELETE_SITE = By.cssSelector("#HEADER_DELETE_SITE_text");
     protected static final By LEAVE_SITE = By.cssSelector("#HEADER_LEAVE_SITE_text");
     protected static final By JOIN_SITE = By.cssSelector("#HEADER_JOIN_SITE_text");
     protected static final By MORE_BUTTON_LINK = By.cssSelector(".links>div>div>ul>li>a");
     protected static final String SITE_DASHBOARD = "Site Dashboard";
+    protected static final By SITE_DASHBOARD_NAVIGATION = By.cssSelector("#HEADER_SITE_DASHBOARD");
     protected static final String DASHBOARD = "Dashboard";
     protected static final String PROJECT_LIBRARY = "Project Library";
     protected static final String INVITE_BUTTON = "a[href$='invite']";
@@ -55,6 +67,8 @@ public abstract class AbstractSiteNavigation extends SharePage
     protected static final By SITE_MEMBERS = By.cssSelector("div#HEADER_SITE_MEMBERS");
     protected static final By MEMBERS_LINK = By.cssSelector("span#HEADER_SITE_MEMBERS_text");
     protected static final By DOCLIB_LINK = By.cssSelector("#HEADER_SITE_DOCUMENTLIBRARY_text");
+    protected static final By WIKI_LINK = By.cssSelector("#HEADER_SITE_WIKI-PAGE_text");
+    protected static final By SITE_DASHBOARD_LINK = By.cssSelector("#HEADER_SITE_DASHBOARD_text");
     protected static final By SITE_MORE_PAGES = By.cssSelector("span#HEADER_SITE_MORE_PAGES_text");
     protected static final String SITE_LINK_NAV_PLACEHOLER = "div.site-navigation > span:nth-of-type(%d) > a";
     public static final String LABEL_DOCUMENTLIBRARY_TEXT = "span#HEADER_SITE_DOCUMENTLIBRARY_text";
@@ -115,7 +129,7 @@ public abstract class AbstractSiteNavigation extends SharePage
      */
     public boolean isDashboardDisplayed()
     {
-        return dashboard.isDisplayed();
+        return isLinkDisplayed(SITE_DASHBOARD_NAVIGATION);
     }
     
     /**

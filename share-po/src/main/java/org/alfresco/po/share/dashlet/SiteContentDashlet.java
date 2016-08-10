@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share.dashlet;
 
@@ -47,6 +58,7 @@ public class SiteContentDashlet extends AbstractDashlet implements Dashlet
 
     private final Log logger = LogFactory.getLog(SiteContentDashlet.class);
     private static final String DATA_LIST_CSS_LOCATION = "h3.filename>a";
+    private static final String SITE_LIST_CSS_LOCATION = "a[class='site-link theme-color-1']";
     private static final String DASHLET_CONTAINER_PLACEHOLDER = "div.dashlet.docsummary";
     private static final String DASHLET_DETAILED_VIEW_BUTTON = "button[title='Detailed View']";
     private static final String DASHLET_SIMPLE_VIEW_BUTTON = "button[title='Simple View']";
@@ -120,6 +132,37 @@ public class SiteContentDashlet extends AbstractDashlet implements Dashlet
         }
         throw new PageException("Link can not be found on the dashlet");
     }
+    
+    
+    /**
+     * Retrieves the site link that matches the site name.
+     * 
+     * @param name
+     *            identifier
+     * @return {@link ShareLink} that matches members name
+     */
+    public  ShareLink selectSite(final String name)
+    {
+        if (name == null)
+        {
+            throw new UnsupportedOperationException("Name value of link is required");
+        }
+        List<ShareLink> shareLinks = getList(SITE_LIST_CSS_LOCATION);
+        if (shareLinks != null)
+        {
+            for (ShareLink link : shareLinks)
+            {
+                if (name.equalsIgnoreCase(link.getDescription()))
+                {
+                    return link;
+                }
+            }
+            throw new PageException(String.format("Link %s can not be found on the page, dashlet exists: %s link size: %d", name, dashlet, shareLinks.size()));
+        }
+        throw new PageException("Link can not be found on the dashlet");
+    }
+    
+    
     @SuppressWarnings("unchecked")
     public  SiteContentDashlet render(RenderTime timer)
     {

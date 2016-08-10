@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share.site;
 
@@ -50,7 +61,7 @@ public class CustomizeSitePage extends SitePage
     private static final By CANCEL_BUTTON = By.cssSelector("#template_x002e_customise-pages_x002e_customise-site_x0023_default-save-button-button");
     private static final By THEME_MENU = By.cssSelector("#template_x002e_customise-pages_x002e_customise-site_x0023_default-theme-menu");
     private static final By DOCUMENT_LIB = By.cssSelector("li[id$='_default-page-documentlibrary']");
-    private static final By CURRENT_PAGES_CONTAINER = By.xpath("//ul[contains(@id, '_default-currentPages-ul')]/..");
+    private static final By CURRENT_PAGES_CONTAINER = By.cssSelector(".current-pages"); // By.xpath("//ul[contains(@id, '_default-currentPages-ul')]/..");
     //private static final By LAST_AVAILABLE_PAGE = By.cssSelector("ul[id$='_default-availablePages-ul']:last-child li[class$='dnd-draggable']:last-child");
     private static final By LAST_AVAILABLE_PAGE = By.xpath("//ul[contains(@id, '_default-availablePages-ul')]/..//li[@class='customise-pages-page-list-item dnd-draggable'][last()]");
     private static final By LAST_CURRENT_PAGE = By.xpath("//ul[contains(@id, '_default-currentPages-ul')]/..//li[@class='customise-pages-page-list-item dnd-draggable'][last()]");
@@ -204,6 +215,50 @@ public class CustomizeSitePage extends SitePage
 //        waitUntilAlert();
 //        return getCurrentPage();
 //    }
+    
+    /**
+     * Move pages from Current Site Pages to Available Site Pages 
+     * 
+     * @param pageType
+     * @return
+     */
+    public HtmlPage addToAvailablePages (SitePageType pageType)
+    {
+        WebElement target = driver.findElement(AVAILABLE_PAGES);
+        try
+        {
+            WebElement elem = driver.findElement(pageType.getLocator());
+            executeJavaScript(String.format("window.scrollTo(0, '%s')", target.getLocation().getY()));
+            dragAndDrop(elem, target);
+        }
+        catch (TimeoutException toe)
+        {
+            throw new PageException("Not able to find Site Page: " + pageType, toe);
+        }
+        return getCurrentPage();
+    }
+   
+    /**
+     * Move pages from Available Site Pages to Current Site Pages
+     * 
+     * @param pageType
+     * @return
+     */
+    public HtmlPage addToCurrentPages (SitePageType pageType)
+    {
+        WebElement target = driver.findElement(CURRENT_PAGES_CONTAINER);
+        try
+        {
+            WebElement elem = driver.findElement(pageType.getLocator());
+            executeJavaScript(String.format("window.scrollTo(0, '%s')", target.getLocation().getY()));
+            dragAndDrop(elem, target);
+        }
+        catch (TimeoutException toe)
+        {
+            throw new PageException("Not able to find Site Page: " + pageType, toe);
+        }
+        return getCurrentPage();
+    }
 
     /**
      * Method used to add pages using coordinates for dropping
@@ -213,7 +268,6 @@ public class CustomizeSitePage extends SitePage
      */
     public HtmlPage addPages (List<SitePageType> pageTypes)
     {
-        WebElement target = driver.findElement(CURRENT_PAGES_CONTAINER);
 
         if (getAvailablePages().containsAll(pageTypes))
         {
@@ -222,8 +276,10 @@ public class CustomizeSitePage extends SitePage
                 try
                 {
                     WebElement elem = driver.findElement(theTypes.getLocator());
-                    WebElement dropZone = driver.findElement(By.cssSelector("ul[id$='default-currentPages-ul']"));
-                    new Actions(driver).dragAndDrop(elem, dropZone).build().perform();
+                    WebElement target = driver.findElement(CURRENT_PAGES_CONTAINER);
+                    
+                    executeJavaScript(String.format("window.scrollTo(0, '%s')", target.getLocation().getY()));
+                    dragAndDrop(elem, target);
                 }
                 catch (TimeoutException e)
                 {
@@ -243,7 +299,44 @@ public class CustomizeSitePage extends SitePage
         waitUntilAlert();
         return getCurrentPage();
     }
+ 
+    /**
+     * Method used to add current pages to Available Pages Section using coordinates for dropping and click OK button
+     * to customise site page
+     *
+     * @param pageTypes List<SitePageType>
+     * @return SiteDashboardPage
+     */
+    public HtmlPage addToAvailablePagesAndClickOK (List<SitePageType> pageTypes)
+    {
+        WebElement target = driver.findElement(AVAILABLE_PAGES);
 
+        if (getCurrentPages().containsAll(pageTypes))
+        {
+            for (SitePageType theTypes : pageTypes)
+            {
+                try
+                {
+                    WebElement elem = driver.findElement(theTypes.getLocator());
+                    executeJavaScript(String.format("window.scrollTo(0, '%s')", target.getLocation().getY()));
+                    dragAndDrop(elem, target);
+                }
+                catch (TimeoutException e)
+                {
+                    throw new PageException("Not able to Site Page in the Page : " + theTypes, e);
+                }
+            }
+        }
+        else
+        {
+            throw new PageException("Some of Site Page(s) are not available to add to Available Pages Site, may be already added. " + pageTypes.toString());
+        }        
+        driver.findElement(SAVE_BUTTON).click();
+        waitUntilAlert();
+        return getCurrentPage();
+    }
+    
+    
     /**
      * Method to add all available pages
      *
@@ -265,4 +358,5 @@ public class CustomizeSitePage extends SitePage
     {
         return getPages(CURRENT_PAGES_CONTAINER);
     }
+    
 }

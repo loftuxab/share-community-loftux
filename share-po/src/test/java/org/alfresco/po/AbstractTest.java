@@ -1,20 +1,27 @@
 /*
- * Copyright (C) 2005-2012 Alfresco Software Limited.
- *
- * This file is part of Alfresco
- *
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po;
 
@@ -301,78 +308,5 @@ public abstract class AbstractTest extends AbstractTestNGSpringContextTests impl
         return factoryPage.getPage(driver);
     }
     
-    /**
-     * Method to add user to the site
-     * 
-     * @param addUsersToSitePage
-     * @param userName
-     * @param role
-     * @throws Exception
-     */
-    protected void addUsersToSite(AddUsersToSitePage addUsersToSitePage, String userName, UserRole role) throws Exception
-    {
-        int counter = 0;
-        int waitInMilliSeconds = 2000;
-        List<String> searchUsers = null;
-        while (counter < retrySearchCount + 8)
-        {
-            searchUsers = addUsersToSitePage.searchUser(userName);
-            if (searchUsers != null && searchUsers.size() > 0 && hasUser(searchUsers, userName))
-            {
-                addUsersToSitePage.clickSelectUser(userName);
-                addUsersToSitePage.setUserRoles(userName, role);
-                addUsersToSitePage.clickAddUsersButton();
-                break;
-            }
-            else
-            {
-                counter++;
-                factoryPage.getPage(driver).render();
-            }
-            // double wait time to not over do solr search
-            waitInMilliSeconds = (waitInMilliSeconds * 2);
-            synchronized (this)
-            {
-                try
-                {
-                    this.wait(waitInMilliSeconds);
-                }
-                catch (InterruptedException e)
-                {
-                }
-            }
-        }
-        try
-        {
-            addUsersToSitePage.renderWithUserSearchResults(maxPageWaitTime);
-        }
-        catch (PageRenderTimeException exception)
-        {
-            saveScreenShot("SiteTest.instantiateMembers-error");
-            throw new Exception("Waiting for object to load", exception);
-
-        }        
-    }
-    
-    
-    /**
-     * Returns true if the search user list contains created user
-     * 
-     * @param searchUsers
-     * @param userName
-     * @return
-     */
-    protected boolean hasUser(List<String> searchUsers, String userName)
-    {
-        boolean hasUser = false;
-        for(String searchUser : searchUsers)
-        {
-            if(searchUser.indexOf(userName) != -1)
-            {
-                hasUser = true;
-            }
-        }
-        return hasUser;
-    }
     
 }

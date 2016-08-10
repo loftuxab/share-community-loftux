@@ -57,6 +57,19 @@
       PREF_GALLERY_COLUMNS = PREFERENCES_DOCLIST + ".galleryColumns";
 
    /**
+    * Polyfill for ES6 String.prototype.startsWith() (IE11 compatibility)
+    * @see MNT-16389
+    */
+   if (!String.prototype.startsWith) 
+   {
+       String.prototype.startsWith = function(searchString, position) 
+       {
+           position = position || 0;
+           return this.substr(position, searchString.length) === searchString;
+       };
+   }
+
+   /**
     * Document Library Drag and Drop object declaration.
     */
    Alfresco.DnD = function(id, docLib, sGroup, config)
@@ -634,21 +647,29 @@
       {
          if (jsNode.isContainer)
          {
+            var recordSite = Alfresco.DocumentList.getRecordSite(record),
+               currentSite = scope.options.siteId,
+               recordPath = record.location.path;
+            // fix for MNT-15347 - browsing non primary folders from another site
+            if (currentSite !== "" && recordSite !== null && currentSite !== recordSite)
+            {
+               recordPath = scope.currentPath;
+            }
             if (record.parent.isContainer || record.node.isContainer)
             {
                // handle folder parent node
                var location = {};
-               location.path = scope.currentPath;
+               location.path = recordPath;
                location.file = record.location.file;
                html = '#" class="filter-change" rel="' + Alfresco.DocumentList.generatePathMarkup(location);
             }
-            else if (record.location.path === "/")
+            else if (recordPath === "/")
             {
                // handle Repository root parent node (special store_root type - not a folder)
                html = '#" class="filter-change" rel="' + Alfresco.DocumentList.generateFilterMarkup(
                   {
                      filterId: "path",
-                     filterData: $combine(scope.currentPath, "")
+                     filterData: $combine(recordPath, "")
                   });
             }
             else
@@ -672,6 +693,28 @@
       }
 
       return '<a href="' + html + '">';
+   };
+   
+   /**
+    * Extracts record site name  
+    * repoPath for documents within a site has following format : "/Sites/sitename/documentLibrary/*"
+    * 
+    * @method _getRecordSite
+    * @param record
+    * @return site name if document record is within a site, otherwise null
+    */
+   Alfresco.DocumentList.getRecordSite = function DL_getRecordSite(record)
+   {
+       var repoPath = record.location.repoPath,
+       sites = "/Sites/",
+       docLibrary = "/documentLibrary",
+       docLibraryIndex = repoPath.indexOf(docLibrary);
+       
+       if (repoPath.startsWith(sites) && docLibraryIndex > -1 && docLibraryIndex == repoPath.indexOf("/", sites.length))
+       {
+          return repoPath.substring(sites.length, docLibraryIndex);
+       }
+       return null;
    };
 
    /**
@@ -3838,6 +3881,24 @@
             this.viewRenderers[this.options.viewRendererName].onFileRenamed(this, layer, args);
          }
       },
+      
+      /**
+       * MNT-15900: Share: Items remain selected at source destination after Copy action
+       */
+      _unselectCopiedFiles: function DL__unselectCopiedFiles(obj)
+      {
+         if (obj.action == "filesCopied" && obj.sourceFilesObj && obj.sourceFilesObj.nodeRefs)
+         {
+            var copiedFiles = obj.sourceFilesObj.nodeRefs;
+            for (var i = 0, j = copiedFiles.length ; i < j; i++)
+            {
+                if (this.selectedFiles[copiedFiles[i]])
+                {
+                    this.selectedFiles[copiedFiles[i]] = false;
+                }
+            }
+         }
+      },
 
       /**
        * DocList Refresh Required event handler
@@ -3849,6 +3910,7 @@
       onDocListRefresh: function DL_onDocListRefresh(layer, args)
       {
          var obj = args[1];
+         this._unselectCopiedFiles(obj);
          if (obj && (obj.highlightFile !== null))
          {
             this.options.highlightFile = obj.highlightFile;

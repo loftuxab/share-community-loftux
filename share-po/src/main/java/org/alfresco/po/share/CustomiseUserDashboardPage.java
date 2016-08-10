@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 
 package org.alfresco.po.share;
@@ -31,6 +42,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.interactions.internal.Coordinates;
+import org.openqa.selenium.internal.Locatable;
 
 public class CustomiseUserDashboardPage extends SharePage
 {
@@ -207,8 +221,21 @@ public class CustomiseUserDashboardPage extends SharePage
 
         try
         {
-            String dashletXpath = String.format("//*[@class='availableDashlet dnd-draggable']/span[text()=\"%s\"]", dashletName.getDashletName());
-            WebElement element = findAndWait(By.xpath(dashletXpath));
+//            String dashletXpath = String.format("//li[@class='availableDashlet dnd-draggable']/span[text()=\"%s\"]", dashletName.getDashletName());
+//            WebElement element = findAndWait(By.xpath(dashletXpath));
+//            executeJavaScript(String.format("window.scrollTo('%s', '%s')", element.getLocation().getX(), element.getLocation().getY()));
+            
+        	String dashletSelector = String.format("li.availableDashlet div.dnd-draggable[title*=\"%s\"]", dashletName.getDashletName().replace("'", "\'"));
+            By dashlet = By.cssSelector("li.availableDashlet div.dnd-draggable[title*=\"" + dashletName.getDashletName().replace("'", "\'") + "\"]");
+            WebElement element = findAndWait(dashlet);
+            
+            // Move element into View if not already
+            Actions actions = new Actions(driver);
+            actions.moveToElement(element).perform();
+            
+            Coordinates coord = ((Locatable)element).getCoordinates();
+            coord.inViewPort();
+
             element.click();
             List<WebElement> dashlets = findAndWaitForElements(AVAILABLE_DASHLETS_NAMES, getDefaultWaitTime());
             for (WebElement source : dashlets)
@@ -405,7 +432,7 @@ public class CustomiseUserDashboardPage extends SharePage
      */
     public DashBoardPage removeDashlet(Dashlets dashlet)
     {
-        String dashletXpath = String.format("//div[@class='column']//span[text()='%s']/../div", dashlet.getDashletName());
+        String dashletXpath = String.format("//div[@class='column']//span[text()=\"%s\"]/../div", dashlet.getDashletName());
         WebElement element = findAndWait(By.xpath(dashletXpath));
         dragAndDrop(element, driver.findElement(TRASHCAN));
         waitUntilAlert();

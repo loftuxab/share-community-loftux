@@ -1,16 +1,27 @@
 /*
- * # * Copyright (C) 2005-2012 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share.site;
 
@@ -51,7 +62,8 @@ public class SiteTest extends AbstractTest
     private String publicSiteNameLabel;
     private String moderatedSiteNameLabel;
     private String privateSiteNameLabel;
-
+    private String deleteSiteName;
+    
     DashBoardPage dashBoard;
     String testuser = "testuser" + System.currentTimeMillis();
     String testuser2 = "testuser2" + System.currentTimeMillis();
@@ -66,6 +78,7 @@ public class SiteTest extends AbstractTest
         publicSiteNameLabel = "publicSiteNameLabel" + System.currentTimeMillis();
         moderatedSiteNameLabel = "moderatedSiteNameLabel" + System.currentTimeMillis();
         privateSiteNameLabel = "privateSiteNameLabel" + System.currentTimeMillis();
+        deleteSiteName = "deleteSiteName" + System.currentTimeMillis();
         // user joining the above sites
     }
 
@@ -196,9 +209,34 @@ public class SiteTest extends AbstractTest
         List<String> sites = siteFinder.getSiteList();
         Assert.assertFalse(sites.contains(siteName));
     }
+    
+    /**
+     * Test site deletion from Site Configuration Options drop down.
+     * 
+     * @throws IOException
+     * @throws Exception if error found
+     */
 
-
-
+    @Test(dependsOnMethods = { "deleteSite" })
+    public void deleteSiteFromSiteConfigurationOptionsDropdown() throws Exception
+    {       
+        siteUtil.createSite(driver, "admin", "admin", deleteSiteName, "description", "Private");
+        SiteDashboardPage siteDashBoard = resolvePage(driver).render();
+        
+        dashBoard = siteDashBoard.getSiteNav().selectDeleteSite().render();
+        
+        //check the site is deleted
+        SiteFinderPage siteFinder = dashBoard.getNav().selectSearchForSites().render();
+        siteFinder = siteFinder.searchForSite(deleteSiteName).render();
+        
+        List<String> sites = siteFinder.getSiteList();
+        Assert.assertFalse(sites.contains(deleteSiteName));
+        boolean hasResults = siteFinder.hasResults();
+        Assert.assertFalse(hasResults);
+        
+  
+    }
+  
     @Test(dependsOnMethods = "searchForSiteThatDoesntExists")
     public void createPrivateSite()
     {

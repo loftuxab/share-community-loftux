@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2012 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share;
 
@@ -48,6 +59,7 @@ public abstract class SharePage extends Page
 {
 
     private Log logger = LogFactory.getLog(this.getClass());
+    private static final By PAGE_TITLE_LINK = By.cssSelector("#HEADER_TITLE span a");
     protected static final By USER_LOGGED_IN_LABEL = By.cssSelector("#HEADER_USER_MENU_POPUP_text");
     protected static final By PROMPT_PANEL_ID = By.id("prompt");
     protected long popupRendertime;
@@ -143,6 +155,16 @@ public abstract class SharePage extends Page
         {
         }
         return titleExists;
+    }
+    
+    /**
+     * Clicks on page title link
+     * @return
+     */
+    public HtmlPage clickOnPageTitle()
+    {
+        findAndWait(PAGE_TITLE_LINK).click();
+        return getCurrentPage();
     }
 
     /**

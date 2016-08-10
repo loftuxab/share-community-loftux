@@ -1,16 +1,27 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- * This file is part of Alfresco
+ * #%L
+ * share-po
+ * %%
+ * Copyright (C) 2005 - 2016 Alfresco Software Limited
+ * %%
+ * This file is part of the Alfresco software. 
+ * If the software was purchased under a paid Alfresco license, the terms of 
+ * the paid license agreement will prevail.  Otherwise, the software is 
+ * provided under the following open source license terms:
+ * 
  * Alfresco is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ * 
  * Alfresco is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
+ * 
  * You should have received a copy of the GNU Lesser General Public License
  * along with Alfresco. If not, see <http://www.gnu.org/licenses/>.
+ * #L%
  */
 package org.alfresco.po.share.dashlet;
 
@@ -47,6 +58,8 @@ public class MyActivitiesDashlet extends AbstractDashlet implements Dashlet
     private static final String DASHLET_DIV_PLACEHOLDER = "div.dashlet.activities";
     private static final By MY_ACTIVITIES_BUTTON = By.cssSelector("button[id$='default-user-button']");
     private static final By MY_ACTIVITIES_ITEM = By.cssSelector("div.activities div.visible ul.first-of-type li a");
+    private static final By ACTIVITIES_TYPE_BUTTON = By.cssSelector("button[id$='default-activities-button']");
+    private static final By ACTIVITIES_TYPE_ITEM = By.cssSelector("div.activities div.visible ul.first-of-type li a");
     private static final By HISTORY_BUTTON = By.cssSelector("button[id$='default-range-button']");
     private static final By DASHLET_LIST_OF_FILTER = By.cssSelector("div.activities div.visible ul.first-of-type li a");
     private static final By MY_ACTIVITIES_MORE_LINK = By
@@ -203,7 +216,7 @@ public class MyActivitiesDashlet extends AbstractDashlet implements Dashlet
      * @param name identifier to match against link title
      * @param type LinkType that determines document, site or user type link
      */
-    private synchronized ActivityShareLink selectLink(final String name, LinkType type)
+    public synchronized ActivityShareLink selectLink(final String name, LinkType type)
     {
         if (name == null)
         {
@@ -327,6 +340,48 @@ public class MyActivitiesDashlet extends AbstractDashlet implements Dashlet
 
     }
 
+    
+    /**
+     * Select option from "My Activities" drop down
+     *
+     * @param myActivitiesOption String
+     * @return {@link ShareLink} collection
+     * <br/><br/>author Cristina.Axinte
+     */
+    public HtmlPage selectOptionFromActivitiesType(String activitiesTypeOption)
+    {
+        if (activitiesTypeOption == null)
+        {
+            throw new UnsupportedOperationException("Activity type is required");
+        }
+        try
+        {
+            WebElement activityType = driver.findElement(ACTIVITIES_TYPE_BUTTON);
+            activityType.click();
+
+            List<WebElement> filterElements = driver.findElements(ACTIVITIES_TYPE_ITEM);
+            if (filterElements != null)
+            {
+                for (WebElement webElement : filterElements)
+                {
+                    if (webElement.getText().equals(activitiesTypeOption))
+                    {
+                        webElement.click();
+                        return getCurrentPage();
+                    }
+                }
+            }
+
+        }
+        catch (NoSuchElementException nse)
+        {
+            logger.error("Activity Type option not present" + nse.getMessage());
+        }
+        throw new PageOperationException(activitiesTypeOption + " option not present.");
+
+    }
+    
+    
     /**
      * Select option from history filter drop down
      *
