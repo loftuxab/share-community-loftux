@@ -1115,7 +1115,7 @@ function getPageTitle() {
       var siteData = getSiteData();
       if (siteData != null)
       {
-         pageTitle = siteData.profile.title;
+         pageTitle = siteData.profile.title ? siteData.profile.title : page.url.templateArgs.site;
       }
    }
    else
@@ -1467,41 +1467,44 @@ function getHeaderServices() {
       var siteData = getSiteData();
       if (siteData != null)
       {
-         if (siteData.profile.shortName == "")
-         {
-            services.push({
-               name: "share/services/UrlUnavailableService",
-               config: {
-                  httpStatusCode: 404,
-                  url: page.url.url
+         services.push({
+            name: "share/services/LeaveSiteService",
+            config: {
+               publishPayload: {
+                  site: page.url.templateArgs.site,
+                  siteTitle: siteData.profile.title,
+                  user: user.name,
+                  userFullName: user.fullName
                }
-            });
-         }
-         else
+            }
+         });
+         
+         // user may have access to document library paths/folders if given explicit permissions
+         // other pages should be blocked from direct URL access to avoid messy errors and broken pages
+         if (page.id != "documentlibrary" && page.id != "document-details" && page.id != "folder-details" && !page.url.uri.endsWith("/faceted-search"))
          {
-            if (!user.isAdmin && siteData.profile.visibility != "PUBLIC" && siteData.profile.visibility != "MODERATED" && siteData.userIsMember === false)
+            if (siteData.profile.shortName == "")
             {
                services.push({
                   name: "share/services/UrlUnavailableService",
                   config: {
-                     httpStatusCode: 401,
+                     httpStatusCode: 404,
                      url: page.url.url
                   }
                });
             }
             else
             {
-               services.push({
-                  name: "share/services/LeaveSiteService",
-                  config: {
-                     publishPayload: {
-                        site: page.url.templateArgs.site,
-                        siteTitle: siteData.profile.title,
-                        user: user.name,
-                        userFullName: user.fullName
+               if (!user.isAdmin && siteData.profile.visibility != "PUBLIC" && siteData.profile.visibility != "MODERATED" && siteData.userIsMember === false)
+               {
+                  services.push({
+                     name: "share/services/UrlUnavailableService",
+                     config: {
+                        httpStatusCode: 401,
+                        url: page.url.url
                      }
-                  }
-               });
+                  });
+               }
             }
          }
       }
@@ -1633,6 +1636,13 @@ function getHeaderModel(pageTitle) {
       };
       headerMenus.appItems.push(loggingWidget);
    }
+   
+   var siteTitle = null;
+   var siteData = getSiteData();
+   if (siteData != null)
+   {
+      siteTitle = siteData.profile.title;
+   }
 
    // Get the user and group data and generate a "currentItem" for it so that render filtering
    // can be applied based on group membership...
@@ -1671,6 +1681,8 @@ function getHeaderModel(pageTitle) {
                config: {
                   id: "HEADER_SEARCH_BOX",
                   site: page.url.templateArgs.site,
+                  siteName: siteTitle,
+                  enableContextLiveSearch: true,
                   linkToFacetedSearch: true,
                   sitePage: ""
                }
