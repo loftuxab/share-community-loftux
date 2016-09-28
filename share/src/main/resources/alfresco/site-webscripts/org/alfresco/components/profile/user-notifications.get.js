@@ -15,7 +15,7 @@ function main()
    }
    
     // User may not have set preference, set default according to optin policy
-   if(!emailFeedDisabled)
+   if(emailFeedDisabled == null || emailFeedDisabled == undefined)
    {
       var settings = config.scoped["Notifications"]["settings"], optIn='true';
       if(settings)
