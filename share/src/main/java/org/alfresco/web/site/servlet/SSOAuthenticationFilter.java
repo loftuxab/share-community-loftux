@@ -86,6 +86,7 @@ import org.springframework.extensions.surf.RequestContextUtil;
 import org.springframework.extensions.surf.UserFactory;
 import org.springframework.extensions.surf.exception.ConnectorServiceException;
 import org.springframework.extensions.surf.exception.PlatformRuntimeException;
+import org.springframework.extensions.surf.mvc.PageViewResolver;
 import org.springframework.extensions.surf.site.AuthenticationUtil;
 import org.springframework.extensions.surf.types.Page;
 import org.springframework.extensions.surf.util.Base64;
@@ -125,13 +126,13 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
     private static final String AUTH_BY_KERBEROS = "_alfAuthByKerberos";
     
     private static final String MIME_HTML_TEXT = "text/html";
-
+    
     private static final String PAGE_SERVLET_PATH = "/page";
     private static final String LOGIN_PATH_INFORMATION = "/dologin";
     private static final String LOGIN_PARAMETER = "login";
     private static final String ERROR_PARAMETER = "error";
-    private static final String IGNORE_LINK = "/accept-invite";
     private static final String UNAUTHENTICATED_ACCESS_PROXY = "/proxy/alfresco-noauth";
+    private static final String PAGE_VIEW_RESOLVER = "pageViewResolver";
     
     private ConnectorService connectorService;
     private String endpoint;
@@ -472,21 +473,12 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
             return;
         }
         
-        // external invitation link should not trigger any SSO
-        if (PAGE_SERVLET_PATH.equals(req.getServletPath()) && IGNORE_LINK.equals(req.getPathInfo()))
-        {
-            if (debug)
-                logger.debug("SSO is by-passed for external invitation link.");
-            chain.doFilter(sreq, sresp);
-            return;
-        }
-        
         if (debug) logger.debug("Processing request " + req.getRequestURI() + " SID:" + session.getId());
         
         // Login page or login submission
-        String pathInfo;
+        String pathInfo = req.getPathInfo();
         if (PAGE_SERVLET_PATH.equals(req.getServletPath())
-                && (LOGIN_PATH_INFORMATION.equals(pathInfo = req.getPathInfo()) || pathInfo == null
+                && (LOGIN_PATH_INFORMATION.equals(pathInfo) || pathInfo == null
                         && LOGIN_PARAMETER.equals(req.getParameter("pt"))))
         {
             if (debug)
@@ -512,6 +504,27 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
 
         // get the page from the model if any - it may not require authentication
         Page page = context.getPage();
+        if (page == null && pathInfo != null)
+        {
+            // we didn't find a page - this may be a top-level URL call - so attempt to manually resolve the page
+            PageViewResolver pageViewResolver = (PageViewResolver)getApplicationContext().getBean(PAGE_VIEW_RESOLVER);
+            if (pageViewResolver != null)
+            {
+                try
+                {
+                    // as a side-effect of resolving the view ID into an View object
+                    // the Page context will be updated on the request context for us
+                    if (pageViewResolver.resolveViewName(pathInfo, null) != null)
+                    {
+                        page = context.getPage();
+                    }
+                }
+                catch (Exception e)
+                {
+                    // OK to fall back to null page reference if this happens
+                }
+            }
+        }
         if (page != null && page.getAuthentication() == RequiredAuthentication.none)
         {
             if (logger.isDebugEnabled())
@@ -825,7 +838,7 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
                 // If we are as yet unauthenticated but have external authentication, do a ping check as the external user.
                 // This will either establish the session or throw us out to log in as someone else!
                 userId = req.getRemoteUser();
-             // Set the external auth flag so the UI knows we are using SSO etc.
+                // Set the external auth flag so the UI knows we are using SSO etc.
                 session.setAttribute(UserFactory.SESSION_ATTRIBUTE_EXTERNAL_AUTH, Boolean.TRUE);
                 if (userId != null && logger.isDebugEnabled())
                     logger.debug("Initial login from externally authenticated user " + userId);
@@ -878,7 +891,14 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
                     // having to reauthenticate externally too!
                     if (req.getRemoteUser() == null)
                     {
-                        session.invalidate();
+                        try
+                        {
+                            session.invalidate();
+                        }
+                        catch (IllegalStateException e)
+                        {
+                            // may already been invalidated elsewhere
+                        }
                     }
                     // restart manual login
                     redirectToLoginPage(req, res);
@@ -948,6 +968,7 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
 
         // Clear any cached logon details from the sessiom
         clearSession(session);
+        setRedirectUrl(req);
 
         // restart the authentication process for NTLM
         res.setHeader(HEADER_WWWAUTHENTICATE, authHdr);
@@ -1227,10 +1248,21 @@ public class SSOAuthenticationFilter implements Filter, CallbackHandler
     {
         if (logger.isDebugEnabled())
             logger.debug("Redirecting to the login page.");
-        setRedirectUrl(req);
         
-        String error = req.getParameter(ERROR_PARAMETER);
-        res.sendRedirect(req.getContextPath() + "/page?pt=login" + (error == null ? "" : "&" + ERROR_PARAMETER + "=" + error));
+        if (PAGE_SERVLET_PATH.equals(req.getServletPath()))
+        {
+            // redirect via full page redirect
+            setRedirectUrl(req);
+            
+            String error = req.getParameter(ERROR_PARAMETER);
+            res.sendRedirect(req.getContextPath() + "/page?pt=login" + (error == null ? "" : "&" + ERROR_PARAMETER + "=" + error));
+        }
+        else
+        {
+            // redirect via 401 response code handled by XHR processing on the client
+            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            res.flushBuffer();
+        }
     }
     
     /**

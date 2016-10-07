@@ -71,7 +71,7 @@ function main()
       // Apply or remove permission
       if (remove)
       {
-         //Prevent the removal of the SiteManager group authority
+         // Prevent the removal of the SiteManager group authority
          if (!(role == "SiteManager" && authority == siteManagerAuthority && !isInherited))
          {
             node.removePermission(role, authority);
@@ -80,7 +80,7 @@ function main()
       else
       {
          var isSpecialAuthority = false;
-         switch (authority)
+         switch ("" + authority)
          {
             case "GROUP_EVERYONE":
             case "ROLE_ADMINISTRATOR":
