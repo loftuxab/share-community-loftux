@@ -171,7 +171,7 @@
 
 .form-container .alf-textarea label
 {
-   float: left;
+   float: inherit;
 }
 
 .form-container .alf-textarea .help-text
