@@ -84,7 +84,28 @@
             <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
         </pluginRepository>
     </pluginRepositories>
-
+    <repositories>
+        <repository>
+        <id>loftux-releases</id>
+        <url>http://artifacts.loftux.net/nexus/content/repositories/releases/</url>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+        </repository>
+        <repository>
+        <id>loftux-snapshots</id>
+        <url>http://artifacts.loftux.net/nexus/content/repositories/snapshots/</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+        </repository>
+    </repositories>
     <distributionManagement>
         <repository>
             <id>alfresco-internal</id>

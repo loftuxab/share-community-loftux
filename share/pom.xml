@@ -281,6 +281,13 @@
             </exclusions>
         </dependency>
 
+        <!-- Language Packages-->
+        <dependency>
+            <groupId>se.loftux.alfresco.i18n</groupId>
+            <artifactId>share-sv-se</artifactId>
+            <version>5.2.0.1-SNAPSHOT</version>
+        </dependency>
+
     </dependencies>
 
     <build>
