@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.alfresco.po.share.DashBoardPage;
 import org.alfresco.po.share.dashlet.AbstractSiteDashletTest;
 import org.alfresco.po.share.enums.UserRole;
 import org.alfresco.po.share.site.document.DocumentLibraryPage;
@@ -56,7 +55,6 @@ import org.testng.annotations.Test;
 public class CustomizeSitePageTest extends AbstractSiteDashletTest
 {
     private String userName = "customizePageUser" + System.currentTimeMillis();
-    private DashBoardPage dashBoard;
     private CustomizeSitePage customizeSitePage;
     private WikiPage wikiPage;
 
@@ -64,12 +62,14 @@ public class CustomizeSitePageTest extends AbstractSiteDashletTest
     public void createSite() throws Exception
     {
         createEnterpriseUser(userName);
-        dashBoard = loginAs(username, password);
+
+        loginAs(username, password);
+        
         siteName = "customizePageSite" + System.currentTimeMillis();
-        CreateSitePage createSitePage = dashBoard.getNav().selectCreateSite().render();
-        createSitePage.createNewSite(siteName).render();
-        navigateToSiteDashboard();
-        siteDashBoard = resolvePage(driver).render();
+
+        siteUtil.createSite(driver, username, password, siteName, "description", "public");
+        siteDashBoard = siteActions.openSiteDashboard(driver, siteName);
+
         AddUsersToSitePage addUsersToSitePage = siteDashBoard
                 .getSiteNav().selectAddUser().render();
         siteUtil.addUsersToSite(driver, addUsersToSitePage, userName, UserRole.COLLABORATOR);
@@ -299,7 +299,7 @@ public class CustomizeSitePageTest extends AbstractSiteDashletTest
     @Test(dependsOnMethods = "noDefaultSitePageMessageForSiteManager", groups = "Enterprise-only")
     public void noDefaultSitePageMessageForSiteUser() throws Exception
     {    
-        dashBoard = loginAs(userName, "password");
+        loginAs(userName, "password");
         String siteUrl = shareUrl + "/page/site/" + siteName;
         driver.navigate().to(siteUrl);
                
