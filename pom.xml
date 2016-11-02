@@ -34,6 +34,8 @@
         <maven.build.sourceVersion>1.8</maven.build.sourceVersion>
         <maven.distributionManagement.snapshot.id>alfresco-internal-snapshots</maven.distributionManagement.snapshot.id>
         <maven.distributionManagement.snapshot.url>https://artifacts.alfresco.com/nexus/content/repositories/internal-snapshots</maven.distributionManagement.snapshot.url>
+        <maven.distributionManagement.release.id>alfresco-internal</maven.distributionManagement.release.id>
+        <maven.distributionManagement.release.url>https://artifacts.alfresco.com/nexus/content/repositories/internal-staging</maven.distributionManagement.release.url>
         <argLine>-Xmx2G -Duser.language=en -Dcom.sun.management.jmxremote</argLine>
 
         <dependency.spring.version>3.2.14.RELEASE</dependency.spring.version>
@@ -108,8 +110,8 @@
     </repositories>
     <distributionManagement>
         <repository>
-            <id>alfresco-internal</id>
-            <url>https://artifacts.alfresco.com/nexus/content/repositories/internal-staging</url>
+            <id>${maven.distributionManagement.release.id}</id>
+            <url>${maven.distributionManagement.release.url}</url>
         </repository>
         <snapshotRepository>
             <id>${maven.distributionManagement.snapshot.id}</id>
@@ -350,6 +352,7 @@
             </plugin>
 
 			<!-- Configure deployment of releases to Staging area of Nexus -->
+            <!-- Loftux removed since this is internal Alfresco only
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -367,6 +370,7 @@
 					</tags>
 				</configuration>
 			</plugin>
+            -->
         </plugins>
 
         <pluginManagement>
