@@ -108,8 +108,9 @@ define(["dojo/_base/declare",
                     {
                         this.alfLog("error", "Failed to retrieve a valid Share Services.");
                     }
-                    this.addError(this.message("no.services.warning"));
-                    domStyle.set(this.domNode, "display", "block");
+                    // Loftux - only log the error. Don´t display #6, ALF-21776
+                    //this.addError(this.message("no.services.warning"));
+                    //domStyle.set(this.domNode, "display", "block");
                 }
             }
         });
