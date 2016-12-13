@@ -26,6 +26,9 @@
 package org.alfresco.po.share.site.document;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.alfresco.po.AbstractTest;
 
@@ -110,8 +113,51 @@ public class DetailsPageTest extends AbstractTest
     {
         siteUtil.deleteSite(username, password, siteName);
     }
+    
+    @Test(groups = { "alfresco-one" })
+    public void deleteFileWithVersionableAspectUsingWebdav() throws Exception
+    {
+        SitePage page = resolvePage(driver).render();
+        DocumentLibraryPage documentLibPage = page.getSiteNav().selectDocumentLibrary().render();
+        
+        //create plain text file
+        String fileWithVersionableAspectName = "plainTextFileWithVersionableAspect" + System.currentTimeMillis();
+        CreatePlainTextContentPage contentPage = documentLibPage.getNavigation().selectCreateContent(ContentType.PLAINTEXT).render();
+        ContentDetails contentDetails = new ContentDetails();
+        contentDetails.setName(fileWithVersionableAspectName);
+        contentDetails.setTitle("Text File With Versionable Aspect Title");
+        contentDetails.setDescription("Text File With Versionable Aspect Description");
+        contentDetails.setContent("Text File With Versionable Aspect Content");
+        DocumentDetailsPage detailsPage = contentPage.create(contentDetails).render();
+        Assert.assertNotNull(detailsPage);
+        
+        //add versionable ascpect to the file
+        SelectAspectsPage aspectsPage = detailsPage.selectManageAspects().render();
+        List<DocumentAspect> aspects = new ArrayList<DocumentAspect>();
+        aspects.add(DocumentAspect.VERSIONABLE);
+        aspectsPage = aspectsPage.add(aspects).render();
+        Assert.assertFalse(aspectsPage.getAvailableSystemAspects().contains(DocumentAspect.VERSIONABLE));
+        detailsPage = aspectsPage.clickApplyChanges().render();
+        documentLibPage = detailsPage.getSiteNav().selectDocumentLibrary().render();
+        Assert.assertTrue(documentLibPage.isFileVisible(fileWithVersionableAspectName));
+        
+        //delete file with versionable aspect using webdav
+        String fileWebdavUrl = "http://" + alfrescoSever + ":" + alfrescoPort +"/alfresco/webdav/Sites/"
+                               + siteName + "/documentLibrary/" + fileWithVersionableAspectName;
+        int response = executeDeleteRequest(fileWebdavUrl, username, password);
 
-    @Test (groups = {"alfresco-one"})
+        //check the http response
+        Assert.assertEquals(response, 200);
+
+        //wait for webdav to delete file and then check the file is not present in document library 
+        Thread.sleep(solrWaitTime);
+        page = resolvePage(driver).render();
+        documentLibPage = page.getSiteNav().selectDocumentLibrary().render();
+        Assert.assertFalse(documentLibPage.isFileVisible(fileWithVersionableAspectName));
+       
+    }
+
+    @Test (dependsOnMethods = "deleteFileWithVersionableAspectUsingWebdav", groups = {"alfresco-one"})
     public void isCommentSectionPresent() throws Exception
     {
         folderDetails = documentLibPage.getFileDirectoryInfo(folderName).selectViewFolderDetails().render();
@@ -240,7 +286,7 @@ public class DetailsPageTest extends AbstractTest
         Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.DELETE_CONTENT), "Delete is not present");
         Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.MANAGE_ASPECTS), "Manage Aspect is not present");
         Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.MANAGE_PERMISSION_DOC), "Manage Permission is not present");
-        Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.CHNAGE_TYPE), "Chnage Type is not present");
+        Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.CHANGE_TYPE), "Chnage Type is not present");
         Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.EDIT_PROPERTIES), "Edit Properties is not present");
         Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.VIEW_IN_EXLPORER), "View In Exlporer to is not present");
         Assert.assertTrue(docDetails.isDocumentActionPresent(DocumentAction.UPLOAD_DOCUMENT), "Upload Document is not present");
@@ -262,7 +308,7 @@ public class DetailsPageTest extends AbstractTest
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.DELETE_CONTENT), "Delete to is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MANAGE_ASPECTS), "Manager Aspect not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MANAGE_PERMISSION_FOL), "Manage Permission not present");
-        Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.CHNAGE_TYPE), "Change Type is not present");
+        Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.CHANGE_TYPE), "Change Type is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.EDIT_PROPERTIES), "Edit properties to is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.MANAGE_RULES), "Manage Rules is not present");
         Assert.assertTrue(folderDetails.isDocumentActionPresent(DocumentAction.DOWNLOAD_FOLDER), "Download Folder is not present");

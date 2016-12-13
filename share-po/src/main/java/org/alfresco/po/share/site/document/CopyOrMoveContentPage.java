@@ -38,6 +38,7 @@ import org.alfresco.po.RenderTime;
 import org.alfresco.po.exception.PageException;
 import org.alfresco.po.exception.PageOperationException;
 import org.alfresco.po.share.ShareDialogue;
+import org.alfresco.po.share.exception.ShareException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -76,6 +77,8 @@ public class CopyOrMoveContentPage extends ShareDialogue
             .cssSelector("button[id$='default-copyMoveTo-ok-button'], button[id$='_default-ruleConfigAction-destinationDialog-ok-button']");
     private final By copyMoveCancelButtonCss = By
             .cssSelector("button[id$='default-copyMoveTo-cancel-button'], button[id$='_default-ruleConfigAction-destinationDialog-cancel']");
+    private final By copyCreateLinkButtonCss = By
+            .cssSelector("button[id$='default-copyMoveTo-link-button']");
     private final By copyMoveDialogCloseButtonCss = By
             .cssSelector("div[id$='default-copyMoveTo-dialog'] .container-close, div[id$='_default-ruleConfigAction-destinationDialog-dialog'] .container-close");
     private final By copyMoveDialogTitleCss = By
@@ -84,12 +87,15 @@ public class CopyOrMoveContentPage extends ShareDialogue
     private final By rmfolderItemsListCss = By.cssSelector("div#ygtvc7.ygtvchildren");
     private final By selectedDestination = By.xpath("//span[@class='yui-button yui-radio-button yui-button-checked yui-radio-button-checked']");
     private final By siteDocumentsCount = By.cssSelector("div#ygtvc,.ygtvchildren.ygtvitem.selected div#ygtvc,.ygtvchildren");
+    
+    private final By messageBoxCss = By.cssSelector("span.message");
+    private String messageText = "";
 
     /**
      * Enum used on {@see org.alfresco.po.share.steps.SiteActions}
      * @author pbrodner
      */
-    public enum ACTION{COPY, MOVE};
+    public enum ACTION{COPY, CREATE_LINK, MOVE};
     
     /**
      * Enum used on {@see org.alfresco.po.share.steps.SiteActions}
@@ -266,6 +272,25 @@ public class CopyOrMoveContentPage extends ShareDialogue
     }
 
     /**
+     * Check if Create Link button is displayed
+     *
+     * @return boolean
+     */
+    public boolean isCreateLinkButtonVisible()
+    {
+        try
+        {
+            WebElement button = driver.findElement(copyCreateLinkButtonCss);
+            return button.isDisplayed();
+        }
+        catch (NoSuchElementException nse)
+        {
+            logger.error("Create Link button is not present", nse);
+            return false;
+        }
+    }
+
+    /**
      * This method finds the clicks on copy/move button.
      *
      * @return HtmlPage Document library page/ Repository Page
@@ -292,6 +317,101 @@ public class CopyOrMoveContentPage extends ShareDialogue
             //ignore exception as this is only used to verify the message dialog disappears. 
         }
         return getCurrentPage();
+    }
+
+    /**
+     * Check if javascript message about link creation is displayed.
+     *
+     * @return true if message displayed
+     */
+    private boolean isMessageDisplayed()
+    {
+        try
+        {
+            WebElement messageBox = driver.findElement(messageBoxCss);
+            messageText = messageBox.getText();
+            return messageBox.isDisplayed();
+        }
+        catch (NoSuchElementException e)
+        {
+            logger.error("Link creation message not displayed");
+            throw new  NoSuchElementException("Link creation message not displayed", e);
+        }
+        catch (StaleElementReferenceException ser)
+        {
+            driver.navigate().refresh();
+            return isMessageDisplayed();
+        }
+    }
+    
+    /**
+     * Check if javascript message about link creation is displayed.
+     *
+     * @return true if message displayed
+     */
+    private String getMessageText()
+    {
+        isMessageDisplayed();
+        return messageText;
+    }
+
+    /**
+     * Check if successful javascript message about link creation is displayed.
+     *
+     * @return true if successful message displayed, false if link could not be created
+     */
+    private boolean isLinkCreated()
+    {
+        try
+        {
+            String text = getMessageText();
+            if (text.contains("Successfully created link"))
+            {
+                waitUntilAlert();
+                return true;
+            }
+            if (text.contains("could not"))
+            {
+                waitUntilAlert();
+                throw new ShareException(messageText);
+            }
+        }
+        catch (NoSuchElementException e)
+        {
+            logger.error("Link creation message not displayed", e);
+        }
+        return false;
+    }
+
+    /**
+     * This method finds and clicks on Create Link button
+     * 
+     * @return HtmlPage
+     */
+    public HtmlPage selectCreateLinkButton()
+    {
+        try
+        {
+            WebElement button = driver.findElement(copyCreateLinkButtonCss);
+            button.click();
+            
+//            if (isLinkCreated())
+//            {
+                waitUntilAlert();
+                return getCurrentPage();
+//            }
+//            throw new ShareException(messageText);
+        }
+        catch (NoSuchElementException | StaleElementReferenceException nse)
+        {
+            logger.error("Create Link button not visible. ", nse);
+            throw new NoSuchElementException("Create Link button not visible. ", nse);
+        }
+        catch (TimeoutException te)
+        {
+            logger.error("Unable to find Create Link element. ", te);
+            throw new TimeoutException("Unable to find Create Link element. ", te);
+        }
     }
 
     /**

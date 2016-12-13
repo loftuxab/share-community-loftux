@@ -39,7 +39,6 @@ import org.alfresco.po.HtmlPage;
 import org.alfresco.po.exception.PageException;
 import org.alfresco.po.exception.PageOperationException;
 import org.alfresco.po.share.DashBoardPage;
-import org.alfresco.po.share.FactoryPage;
 import org.alfresco.po.share.ShareLink;
 import org.alfresco.po.share.SharePage;
 import org.alfresco.po.share.SharePopup;
@@ -49,9 +48,11 @@ import org.alfresco.po.share.dashlet.MyActivitiesDashlet.LinkType;
 import org.alfresco.po.share.enums.Dashlets;
 import org.alfresco.po.share.exception.ShareException;
 import org.alfresco.po.share.exception.UnexpectedSharePageException;
+import org.alfresco.po.share.site.ConfirmRequestToJoinPopUp;
 import org.alfresco.po.share.site.CreateSitePage;
 import org.alfresco.po.share.site.NewFolderPage;
 import org.alfresco.po.share.site.SiteDashboardPage;
+import org.alfresco.po.share.site.SiteMembersPage;
 import org.alfresco.po.share.site.SitePage;
 import org.alfresco.po.share.site.UpdateFilePage;
 import org.alfresco.po.share.site.UploadFilePage;
@@ -62,6 +63,7 @@ import org.alfresco.po.share.site.document.ContentDetails;
 import org.alfresco.po.share.site.document.ContentType;
 import org.alfresco.po.share.site.document.CopyOrMoveContentPage;
 import org.alfresco.po.share.site.document.CopyOrMoveContentPage.ACTION;
+import org.alfresco.po.share.site.document.CopyOrMoveContentPage.DESTINATION;
 import org.alfresco.po.share.site.document.CreatePlainTextContentPage;
 import org.alfresco.po.share.site.document.DetailsPage;
 import org.alfresco.po.share.site.document.DocumentDetailsPage;
@@ -692,22 +694,26 @@ public class SiteActions extends CommonActions
         openSiteURL(driver, siteName); 
         return openDocumentLibrary(driver).render();
     }
-
+    
     /**
      * Copy or Move to File or folder from document library.
      * 
-     * @param driver
-     * @param destination
-     * @param siteName
-     * @param fileName
-     * @return
+     * @param driver WebDriver
+     * @param destination String (options: Recent Sites, Favorite Sites, All Sites, Repository, Shared Files, My File)
+     * @param siteName String - the siteName that exists in <destination>
+     * @param siteDescription String - the siteDescription - IF THIS VALUE IS SET, THEN WE WILL SELECT THE SITE BY DESCRIPTION NOT BY <siteName>
+     * @param fileName String
+     * @return HtmlPage
+     * @author pbrodner
      */
-    public HtmlPage copyOrMoveArtifact(WebDriver driver, String destination, String siteName,  String fileName, String type, String... moveFolderName)
+    public HtmlPage copyOrMoveArtifact(WebDriver driver, DESTINATION destination, String siteName, String siteDescription, String fileName, CopyOrMoveContentPage.ACTION action, String... moveFolderName)
     {
-        DocumentLibraryPage docPage =factoryPage.getPage(driver).render();
+        DocumentLibraryPage docPage = getSharePage(driver).render();
+        
         CopyOrMoveContentPage copyOrMoveToPage;
 
-        if (type.equals("Copy"))
+        // Select Copy or Move To Action
+        if (action == ACTION.COPY || action == ACTION.CREATE_LINK) 
         {
             copyOrMoveToPage = docPage.getFileDirectoryInfo(fileName).selectCopyTo().render();
         }
@@ -716,68 +722,42 @@ public class SiteActions extends CommonActions
             copyOrMoveToPage = docPage.getFileDirectoryInfo(fileName).selectMoveTo().render();
         }
 
-        copyOrMoveToPage.selectDestination(destination);
-        if(destination.contains("Sites"))
-        {
-        copyOrMoveToPage.selectSite(siteName).render();
-        }
-        if (moveFolderName != null)
-        {
-        	try
-        	{
-        		copyOrMoveToPage.selectPath(moveFolderName).render();
-        	}
-        	catch(Exception e)
-        	{
-        		//retry one last time.
-        		copyOrMoveToPage.selectPath(moveFolderName).render();
-        	}
-        }
-        copyOrMoveToPage.selectOkButton().render();
-        return getSharePage(driver);
-    }
-    
-    /**
-     * Copy or Move to File or folder from document library.
-     * 
-     * @param drone WebDriver
-     * @param destination String (options: Recent Sites, Favorite Sites, All Sites, Repository, Shared Files, My File)
-     * @param siteName String - the siteName that exists in <destination>
-     * @param siteDescription String - the siteDescription - IF THIS VALUE IS SET, THEN WE WILL SELECT THE SITE BY DESCRIPTION NOT BY <siteName>
-     * @param fileName String
-     * @return HtmlPage
-     * @author pbrodner
-     */
-    public HtmlPage copyOrMoveArtifact(WebDriver driver, FactoryPage factory, CopyOrMoveContentPage.DESTINATION destination, String siteName, String siteDescription, String fileName, CopyOrMoveContentPage.ACTION action, String... moveFolderName)
-    {
-        DocumentLibraryPage docPage = factory.getPage(driver).render();
-        CopyOrMoveContentPage copyOrMoveToPage;
-
-        if (action==ACTION.COPY) {
-            copyOrMoveToPage = docPage.getFileDirectoryInfo(fileName).selectCopyTo().render();
-        }
-        else {
-            copyOrMoveToPage = docPage.getFileDirectoryInfo(fileName).selectMoveTo().render();
-        }
-
-        //if our <destination> is already selected - continue
+        // Select <destination> if not already selected
         String active = copyOrMoveToPage.getSelectedDestination();
-        if(!active.equals(destination.getValue())) {
-       	 copyOrMoveToPage.selectDestination(destination.getValue());	 
+        if(!active.equals(destination.getValue())) 
+        {
+            copyOrMoveToPage.selectDestination(destination.getValue());	 
         }
-
-        if(destination.hasSites()) {
-    	  if (siteDescription!=null && !siteDescription.isEmpty()){
-    		  copyOrMoveToPage.selectSiteByDescription(siteName, siteDescription).render();
-    	  }
-    	  else{
-    		  copyOrMoveToPage.selectSite(siteName).render();
-    	  }        	
+        
+        // Select Site
+        if(destination.hasSites())
+        {
+            if (siteDescription!=null && !siteDescription.isEmpty())
+            {
+                copyOrMoveToPage.selectSiteByDescription(siteName, siteDescription).render();
+    	    } 
+    	    else
+            {
+                copyOrMoveToPage.selectSite(siteName).render();
+    	    }        	
         }
-        if (moveFolderName != null && moveFolderName.length > 0){
+        
+        // Select Destination Path
+        if (moveFolderName != null && moveFolderName.length > 0)
+        {
             copyOrMoveToPage.selectPath(moveFolderName).render();
         }
-        copyOrMoveToPage.selectOkButton().render();
+        
+        // Select Create Link or Default Option
+        if (action == ACTION.CREATE_LINK)
+        {
+            copyOrMoveToPage.selectCreateLinkButton().render();
+        }
+        else
+        {
+            copyOrMoveToPage.selectOkButton().render();
+        }
+        
         return getSharePage(driver);
     }
 
@@ -1258,5 +1238,32 @@ public class SiteActions extends CommonActions
 
         return factoryPage.getPage(driver).render();
 
+    }
+    
+    /**
+     * Utility for requesting to join moderated site when user already logged in
+     * @param  siteName 
+     */
+    public  HtmlPage requestToJoinModSite(WebDriver driver, String modSiteName)
+    {
+    	SiteDashboardPage siteDashboardPage = openSiteDashboard(driver, modSiteName).render(); 
+    	SharePage sharePage = siteDashboardPage.requestToJoinSite().render();        
+    	if (sharePage instanceof ConfirmRequestToJoinPopUp) 
+    	{
+    		 return ((ConfirmRequestToJoinPopUp) sharePage).selectOk();	
+    	}
+        return factoryPage.getPage(driver).render();
+    }
+    
+    /**
+     * Utility for navigating to PendingRequset Page when user already logged in
+     * @param  siteName     
+     */
+    public HtmlPage navigateToPendingRequestPage(WebDriver driver, String modSiteName)
+    {
+    	SiteDashboardPage siteDashboardPage = openSiteDashboard(driver, modSiteName).render();
+    	SiteMembersPage siteMembersPage = siteDashboardPage.getSiteNav().selectMembersPage().render();
+    	return siteMembersPage.navigateToPendingInvites().render();
+    	
     }
 }

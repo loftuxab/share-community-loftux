@@ -366,22 +366,30 @@ function getBulkActionWidgets()
       multiSelectAction = multiSelectActions.get(i);
       attr = multiSelectAction.attributes;
 
-      if(!attr["syncMode"] || attr["syncMode"].toString() == syncMode.value)
+      // See SHA-1876 - only allow actions supported by Aikau
+      if (attr.id === "onActionDownload" ||
+          attr.id === "onActionCopyTo" ||
+          attr.id === "onActionMoveTo" ||
+          attr.id === "onActionAssignWorkflow" ||
+          attr.id === "onActionDelete")
       {
-         // Multi-Select Actions
-         action = {
-            icon: attr["icon"] ? attr["icon"].toString() : "",
-            id: attr["id"] ? attr["id"].toString() : "",
-            type: attr["type"] ? attr["type"].toString() : "",
-            permission: attr["permission"] ? attr["permission"].toString() : "",
-            asset: attr["asset"] ? attr["asset"].toString() : "",
-            href: attr["href"] ? attr["href"].toString() : "",
-            label: attr["label"] ? attr["label"].toString() : "",
-            hasAspect: attr["hasAspect"] ? attr["hasAspect"].toString() : "",
-            notAspect: attr["notAspect"] ? attr["notAspect"].toString() : ""
-         };
+         if(!attr["syncMode"] || attr["syncMode"].toString() == syncMode.value)
+         {
+            // Multi-Select Actions
+            action = {
+               icon: attr["icon"] ? attr["icon"].toString() : "",
+               id: attr["id"] ? attr["id"].toString() : "",
+               type: attr["type"] ? attr["type"].toString() : "",
+               permission: attr["permission"] ? attr["permission"].toString() : "",
+               asset: attr["asset"] ? attr["asset"].toString() : "",
+               href: attr["href"] ? attr["href"].toString() : "",
+               label: attr["label"] ? attr["label"].toString() : "",
+               hasAspect: attr["hasAspect"] ? attr["hasAspect"].toString() : "",
+               notAspect: attr["notAspect"] ? attr["notAspect"].toString() : ""
+            };
 
-         actionWidgets.push(createAlfDocumentActionMenuItem(action))
+            actionWidgets.push(createAlfDocumentActionMenuItem(action))
+         }
       }
    }
    return actionWidgets;
@@ -631,7 +639,8 @@ var searchDocLib = {
                      config: {
                         siteLandingPage: "",
                         enableContextMenu: false,
-                        showSelector: true
+                        showSelector: true,
+                        showSearchTermHighlights: true
                      }
                   }
                ]
@@ -1022,12 +1031,19 @@ var scopeSelection = {
 main.config.widgets.splice(2, 0, scopeSelection);
 
 // Append services with those required for search
-services.push("alfresco/services/SearchService",
+services.push({
+                 name: "alfresco/services/SearchService",
+                 config: {
+                    highlightFragmentSize: 100,
+                    highlightSnippetCount: 255
+                 }
+              },
               "alfresco/services/ActionService",
               {
                  name: "alfresco/services/actions/CopyMoveService",
                  config: {
-                     repoNodeRef: repoRootNode
+                    repoNodeRef: repoRootNode,
+                    supportLinkCreation: true
                  }
               },
               "alfresco/services/actions/SimpleWorkflowService",

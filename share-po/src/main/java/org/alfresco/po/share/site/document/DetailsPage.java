@@ -28,7 +28,7 @@ package org.alfresco.po.share.site.document;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.alfresco.po.share.site.document.DocumentAction.CHNAGE_TYPE;
+import static org.alfresco.po.share.site.document.DocumentAction.CHANGE_TYPE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -721,7 +721,7 @@ public abstract class DetailsPage extends SitePage
     /**
      * Confirm delete dialog acceptance action.
      */
-    protected void confirmDelete()
+    public void confirmDelete()
     {
         try
         {
@@ -1761,14 +1761,14 @@ public abstract class DetailsPage extends SitePage
     {
         try
         {
-            WebElement changeTypeLink = findAndWait(By.cssSelector(CHNAGE_TYPE.getCssValue() + " a"));
+            WebElement changeTypeLink = findAndWait(By.cssSelector(CHANGE_TYPE.getCssValue() + " a"));
             changeTypeLink.click();
             return factoryPage.getPage(driver).render();
 
         }
         catch (TimeoutException te)
         {
-            throw new ShareException("Unable to find " + CHNAGE_TYPE);
+            throw new ShareException("Unable to find " + CHANGE_TYPE);
         }
     }
 

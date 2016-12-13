@@ -531,6 +531,7 @@
       YAHOO.Bubbling.on("fileCopied", this.onFileAction, this);
       YAHOO.Bubbling.on("fileDeleted", this.onFileAction, this);
       YAHOO.Bubbling.on("fileMoved", this.onFileAction, this);
+      YAHOO.Bubbling.on("fileLinkCreated", this.onFileAction, this);
       YAHOO.Bubbling.on("filePermissionsUpdated", this.onFileAction, this);
       YAHOO.Bubbling.on("folderCopied", this.onFileAction, this);
       YAHOO.Bubbling.on("folderDeleted", this.onFileAction, this);
@@ -540,6 +541,7 @@
       YAHOO.Bubbling.on("filesCopied", this.onDocListRefresh, this);
       YAHOO.Bubbling.on("filesDeleted", this.onDocListRefresh, this);
       YAHOO.Bubbling.on("filesMoved", this.onDocListRefresh, this);
+      YAHOO.Bubbling.on("filesLinkCreated", this.onDocListRefresh, this);
       YAHOO.Bubbling.on("filesPermissionsUpdated", this.onDocListRefresh, this);
 
       return this;
@@ -627,29 +629,63 @@
    Alfresco.DocumentList.generateFileFolderLinkMarkup = function DL_generateFileFolderLinkMarkup(scope, record)
    {
       var jsNode = record.jsNode,
+         recordSite = Alfresco.DocumentList.getRecordSite(record),
+         currentSite = scope.options.siteId,
+         recordPath = record.location.path,
+         recordRepoPath =  record.location.repoPath,
          html;
 
-      if (jsNode.isLink && $isValueSet(scope.options.siteId) && record.location.site && record.location.site.name !== scope.options.siteId)
+      if (jsNode.isLink)
       {
-         if (jsNode.isContainer)
+         var fileName = $isValueSet(jsNode.linkedNode.properties) ? jsNode.linkedNode.properties.name : null;
+         var linkedNodeIsContainer = jsNode.linkedNode.isContainer;
+         
+         if (Alfresco.constants.PAGECONTEXT == "shared")
          {
-            html = $siteURL("documentlibrary?path=" + encodeURIComponent(record.location.path),
+            if (linkedNodeIsContainer)
             {
-               site: record.location.site.name
-            });
+               html = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT + "repository?path=" + encodeURIComponent(recordRepoPath + "/" + fileName);
+            }
+            else
+            {
+               var strNodeRef = jsNode.linkedNode.nodeRef.toString();
+               html = window.location.protocol + "//" + window.location.host + Alfresco.constants.URL_PAGECONTEXT + "document-details?nodeRef=" + strNodeRef;
+            }
+         }
+         else if (linkedNodeIsContainer)
+         {
+            if ($isValueSet(scope.options.siteId) && record.location.site && record.location.site.name !== scope.options.siteId)
+            {
+               html = $siteURL("documentlibrary?path=" + encodeURIComponent(record.location.path+ "/" + fileName),
+               {
+                  site: record.location.site.name
+               });
+            }
+            else
+            {
+               // handle folder parent node
+               var location = {};
+               location.path = recordPath;
+               location.file = record.location.file;
+               html = '#" class="filter-change" rel="' + Alfresco.DocumentList.generatePathMarkup(location);
+            }
          }
          else
          {
-            html = scope.getActionUrls(record, record.location.site.name).documentDetailsUrl;
+            if ($isValueSet(scope.options.siteId) && record.location.site && record.location.site.name !== scope.options.siteId)
+            {
+               html = scope.getActionUrls(record, record.location.site.name).documentDetailsUrl;
+            }
+            else
+            {
+               html = scope.getActionUrls(record).documentDetailsUrl;
+            }
          }
       }
       else
       {
          if (jsNode.isContainer)
          {
-            var recordSite = Alfresco.DocumentList.getRecordSite(record),
-               currentSite = scope.options.siteId,
-               recordPath = record.location.path;
             // fix for MNT-15347 - browsing non primary folders from another site
             if (currentSite !== "" && recordSite !== null && currentSite !== recordSite)
             {
@@ -681,14 +717,7 @@
          else
          {
             var actionUrls = scope.getActionUrls(record);
-            if (jsNode.isLink && jsNode.linkedNode.isContainer)
-            {
-               html = actionUrls.folderDetailsUrl;
-            }
-            else
-            {
-               html = actionUrls.documentDetailsUrl;
-            }
+            html = actionUrls.documentDetailsUrl;
          }
       }
 
@@ -2153,8 +2182,9 @@
                id = Alfresco.util.generateDomId(),
                html = "";
 
-            var suppressTags = Alfresco.util.isSuppressed(record.node, supressComponentConfig.tags.browse.folder);
-            if(!suppressTags)
+            var suppressTagsFolder = Alfresco.util.isSuppressed(record.node, supressComponentConfig.tags.browse.folder);
+            var suppressTagsFile = Alfresco.util.isSuppressed(record.node, supressComponentConfig.tags.browse.file);
+            if(!suppressTagsFolder && ! suppressTagsFile)
             {
                var tags = jsNode.tags, tag;
                if (jsNode.hasAspect("cm:taggable") && tags.length > 0)
@@ -2249,9 +2279,10 @@
          {
             var jsNode = record.jsNode,
                html = "";
-            var supressSocial = Alfresco.util.isSuppressed(record.node, supressComponentConfig.social.browse.folder);
+            var supressSocialFolder = Alfresco.util.isSuppressed(record.node, supressComponentConfig.social.browse.folder);
+            var supressSocialFile = Alfresco.util.isSuppressed(record.node, supressComponentConfig.social.browse.file);
 
-            if (!supressSocial)
+            if (!supressSocialFolder && !supressSocialFile)
             {
                /* Favourite / Likes / Comments */
                html += '<span class="item item-social">' + Alfresco.DocumentList.generateFavourite(this, record) + '</span>';
@@ -3971,7 +4002,7 @@
       _unselectFile: function DL__unselectFile(obj)
       {
           var objAction = obj.action;
-          if (objAction && (objAction == "fileCopied" || objAction == "fileMoved" || objAction == "folderCopied" || objAction == "folderMoved"))
+          if (objAction && (objAction == "fileCopied" || objAction == "fileMoved" || objAction == "folderCopied" || objAction == "folderMoved" || objAction == "fileLinkCreated"))
           {
              if (this.selectedFiles[obj.nodeRef])
              {
@@ -4021,7 +4052,7 @@
        */
       _unselectCopiedFiles: function DL__unselectCopiedFiles(obj)
       {
-         if (obj.action == "filesCopied" && obj.sourceFilesObj && obj.sourceFilesObj.nodeRefs)
+         if ((obj.action == "filesCopied" || obj.action == "filesLinkCreated" )&& obj.sourceFilesObj && obj.sourceFilesObj.nodeRefs)
          {
             var copiedFiles = obj.sourceFilesObj.nodeRefs;
             for (var i = 0, j = copiedFiles.length ; i < j; i++)

@@ -49,6 +49,7 @@ import org.alfresco.po.share.enums.Dashlets;
 import org.alfresco.po.share.search.*;
 import org.alfresco.po.share.search.LiveSearchDropdown.Scope;
 import org.alfresco.po.share.site.SitePageType;
+import org.alfresco.po.share.workflow.StartWorkFlowPage;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openqa.selenium.WebDriver;
@@ -471,6 +472,133 @@ public abstract class CommonActions
             }
         }
         return checkLiveSearchResults(driver, searchString, searchScope, liveSearchItem, expectedInResults);
+    }
+    
+    /**
+     * Utility to perform bulk action on selected search results
+     * @param driver
+     * @param selectItems
+     * @param action
+     * @param destination
+     * @return
+     */
+    //TODO: Implement the details
+	public HtmlPage performBulkActionOnSelectedResults(WebDriver driver, String[] selectItems, SearchSelectedItemsMenu action, String sitename, Boolean conformDelete )
+	{		
+		try
+		{
+			FacetedSearchPage resultsPage = getSharePage(driver).render();			
+		
+			// Select Items
+			for (String item : selectItems) 
+			{
+				resultsPage.getResultByName(item).selectItemCheckBox();
+			}
+
+			// Select Bulk Action
+			// Check action and Provide details as necessary
+			// For Copy or Move
+			if (action.name().equals("COPY_TO"))
+			{
+				CopyAndMoveContentFromSearchPage copyAndMoveContentFromSearchPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(action).render();
+				copyAndMoveContentFromSearchPage.selectDestination("All Sites").render();
+				copyAndMoveContentFromSearchPage.selectSite(sitename).render();
+				copyAndMoveContentFromSearchPage.selectSiteFolder("Document Library");
+				return copyAndMoveContentFromSearchPage.clickCopy().render();			
+			}
+			if (action.name().equals("MOVE_TO"))
+			{
+				CopyAndMoveContentFromSearchPage copyAndMoveContentFromSearchPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(action).render();
+				copyAndMoveContentFromSearchPage.selectDestination("All Sites").render();
+				copyAndMoveContentFromSearchPage.selectSite(sitename).render();
+				copyAndMoveContentFromSearchPage.selectSiteFolder("Document Library");
+				return copyAndMoveContentFromSearchPage.clickMove().render();
+			}
+			
+			else if (action.name().equals("DOWNLOAD_AS_ZIP"))
+			{
+				return resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.DOWNLOAD_AS_ZIP).render();
+			}
+			else if (action.name().equals("START_WORKFLOW"))
+			{
+				return resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.START_WORKFLOW).render();
+			     
+			}
+			else if (action.name().equals("DELETE"))
+			{
+				if (conformDelete==true)
+				{ 
+			       SearchConfirmDeletePage searchConfirmDeletePage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.DELETE).render();
+		           return searchConfirmDeletePage.clickDelete().render();
+				} 
+				else
+				{
+				   SearchConfirmDeletePage searchConfirmDeletePage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.DELETE).render();
+			       return searchConfirmDeletePage.clickCancel().render();
+				}
+			}
+			else
+			{
+				// Throw exception that its not a valid option
+				logger.error("This is not a valid option");
+			}
+		}
+		catch(Exception e)
+		{
+			logger.error("User not on Faceted Results page or Item not found", e);
+		}
+	    return getSharePage(driver).render();
+	}
+
+    /**
+     * Utility to check the search highlighting works
+     * 
+     * @param driver
+     * @param searchResultName
+     * @param resultComponentToCheck
+     * @param termHighlighted
+     * @param expectedResult
+     * @return true if results are as expected, false if not
+     */
+    public boolean checkSearchResultHighlighting(WebDriver driver, String searchResultName, ItemHighlighted resultComponentToCheck, String termHighlighted, boolean expectedResult)
+    {
+
+        boolean SearchResultHighlighting = false;        
+
+        FacetedSearchPage resultPage = getSharePage(driver).render();
+
+        FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResultByName(searchResultName);
+        if (resultItem.isItemHighlighted(resultComponentToCheck) == expectedResult)
+        {
+            SearchResultHighlighting = true;
+        }
+
+        if (termHighlighted.equalsIgnoreCase(resultItem.getHighlightedText(resultComponentToCheck)))
+        {
+            SearchResultHighlighting = SearchResultHighlighting && true;
+        }
+        else
+        {
+            SearchResultHighlighting = SearchResultHighlighting && false;
+        }
+
+        return SearchResultHighlighting;
+    }
+  
+    /**
+     * Utility to get specified FacetedSearchResult from the current page
+     * @param driver
+     * @param searchResultName
+     * @return
+     */
+    public FacetedSearchResult getFacetedSearchResult(WebDriver driver, String searchResultName)
+    {
+
+      FacetedSearchPage resultPage = getSharePage(driver).render();
+
+      FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResultByName(searchResultName);
+
+        return resultItem;
     }
 
 }

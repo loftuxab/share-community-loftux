@@ -42,10 +42,7 @@ import org.alfresco.po.share.util.PageUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.TimeoutException;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 
 @SuppressWarnings("unchecked")
 public class CopyAndMoveContentFromSearchPage extends ShareDialogue
@@ -58,7 +55,11 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
     private final RenderElement DOC_LIST_VIEW = getVisibleRenderElement((By.cssSelector("div[id^='alfresco_documentlibrary_views_AlfDocumentListView']")));
     private final By destinationListCss = By
             .cssSelector("div[class='sub-pickers']>div[class^='alfresco-menus-AlfMenuBar']>div>div[class^='dijitReset dijitInline']>span");
-    private final By copyMoveOkOrCancelButtonCss = By.cssSelector("div[class='footer']>span");
+    private final By copyMoveOkOrCancelButtonCss = By.cssSelector(".footer .dijitButtonText");
+    
+    private static final By CREATE_LINK_BUTTON =
+            By.cssSelector("#ALF_COPY_MOVE_DIALOG > div.dijitDialogPaneContent > div.footer > span:nth-child(1) > span [aria-disabled]");
+    
     private final By copyMoveDialogCloseButtonCss = By.cssSelector("div[class='dijitDialogTitleBar']>span[class^=dijitDialogCloseIcon ]");
     private final By copyMoveDialogTitleCss = By.cssSelector("div[class='dijitDialogTitleBar']>span[class='dijitDialogTitle']");
     private String PathFolderCss = "//div[starts-with(@id,'alfresco_documentlibrary_views_AlfDocumentListView')] //tr/td/span/span/span[@class='value'][text()='%s']";
@@ -66,9 +67,11 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
     
     private final By nextCss = By.cssSelector("div[class$='dijitReset dijitInline dijitMenuItemLabel dijitMenuItem']>span[id$='PAGE_FORWARD_text']");
     private final By backCss = By.cssSelector("div[class$='dijitReset dijitInline dijitMenuItemLabel dijitMenuItem']>span[id$='PAGE_BACK_text']");
-    private final By siteFolderCss = By.cssSelector("span[class='dijitTreeContent']>span[ class='dijitTreeLabel']");    
-    private final By errorPopUp = By.cssSelector(".alfresco-notifications-AlfNotification__container");
-        
+    private final By siteFolderCss = By.cssSelector("span[class='dijitTreeContent']>span[ class='dijitTreeLabel']");
+    private final By errorPopUp = By.cssSelector(".alfresco-notifications-AlfNotification__container");    
+    
+    private final By sitenameSelector = By.cssSelector("div[class='items'] div[role='menuitem']>span");    
+    private final By folderSelector = By.cssSelector(".dijitTree .dijitTreeRow .dijitTreeContent>span[role='treeitem']");
 
     //FIXME render checking for different elements
     @Override
@@ -134,10 +137,10 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
     }
 
     /**
-     * This method finds the clicks on copy/move/cancel button.
+     * This method finds then clicks on copy/move/cancel button.
      * 
      * @param buttonName String
-     * @return HtmlPage FacetedSerachResultsPage
+     * @return HtmlPage FacetedSearchResultsPage
      */
     private HtmlPage selectButton(String buttonName)
     {
@@ -148,17 +151,21 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
 
         try
         {
-            for (WebElement button : findAndWaitForElements(copyMoveOkOrCancelButtonCss))
+        	List<WebElement> buttons = findDisplayedElements(copyMoveOkOrCancelButtonCss);
+            for (WebElement button : buttons)
             {
-                if (button.getText() != null)
+                if(button.isDisplayed() && button.isEnabled())
                 {
-                    if (button.getText().equalsIgnoreCase(buttonName))
-                    {
-                        button.click();                       
-                        waitUntilElementDisappears(errorPopUp,10);
-                        return getCurrentPage().render();
-
-                    }
+	            	if (button.getText() != null)
+	                {
+	                    if (button.getText().equalsIgnoreCase(buttonName))
+	                    {
+	                        button.click();                       
+	                        waitUntilElementDisappears(errorPopUp,10);
+	                        return getCurrentPage().render();
+	
+	                    }
+	                }
                 }
             }
             throw new PageOperationException("Unable to find the button: " + buttonName);
@@ -192,7 +199,7 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
 
     public HtmlPage cancelCopyOrMove()
     {
-    	String cancelCopyOrMoveAction = factoryPage.getValue("search.button.cancel");    	
+    	String cancelCopyOrMoveAction = factoryPage.getValue("button.text.cancel");    	
     	return selectButton(cancelCopyOrMoveAction);
     }
 
@@ -200,6 +207,12 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
     {
     	String moveAction = factoryPage.getValue("search.button.move");
     	return selectButton(moveAction);
+    }
+
+    public HtmlPage clickCreateLink()
+    {
+        String createLinkAction = factoryPage.getValue("search.button.createlink");
+        return selectButton(createLinkAction);
     }
 
     /**
@@ -434,6 +447,44 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
     }
 
     /**
+     * Checks if Create Link Button is displayed
+     *
+     * @return boolean
+     */
+    public boolean isCreateLinkButtonDisplayed()
+    {
+        try
+        {
+            WebElement createLikeButton = driver.findElement(CREATE_LINK_BUTTON);
+            return createLikeButton.isDisplayed();
+        }
+        catch (NoSuchElementException nse)
+        {
+            logger.error("Create Link button is not found ", nse);
+        }
+        return false;
+    }
+
+    /**
+     * Checks if Create Link Button is enabled
+     *
+     * @return boolean
+     */
+    public boolean isCreateLinkButtonEnabled()
+    {
+        try
+        {
+            WebElement createLikeButton = driver.findElement(CREATE_LINK_BUTTON);
+            return ( createLikeButton.getAttribute("aria-disabled").equals("false") );
+        }
+        catch (NoSuchElementException nse)
+        {
+            logger.error("CreateLink button is not found ", nse);
+        }
+        return false;
+    }
+
+    /**
      * Helper method to return true if Next Button is displayed and enabled
      * 
      * @return boolean <tt>true</tt> is Next Button is displayed and enabled
@@ -530,6 +581,81 @@ public class CopyAndMoveContentFromSearchPage extends ShareDialogue
 
         throw new PageOperationException("Unable to select Destination : " + folderName);
     }  
+    
+    /**
+     * This helper method finds the clicks on specified site in CopyAndMoveContentFromSearchPage     
+     * @param siteName
+     * @return
+     */
+    public CopyAndMoveContentFromSearchPage selectSite(String siteName)
+    {
+        PageUtils.checkMandatoryParam("siteName", siteName);
+        try
+        {
+            for (WebElement destination : findAndWaitForElements(sitenameSelector))
+            {
+                if (destination.getText() != null)
+                {
+                    if (destination.getText().equalsIgnoreCase(siteName))
+                    {
+                        destination.click();
+                        break;
+                    }
+
+                }
+
+            }
+
+            return this;
+        }
+        catch (NoSuchElementException | TimeoutException e)
+        {
+            if (logger.isTraceEnabled())
+            {
+                logger.trace("Unable to find the required Site: " + siteName, e);
+            }
+        }
+
+        throw new PageOperationException("Unable to select Site : " + siteName);
+    }
+    
+    /**
+     * This helper method finds the clicks on specified site folder in CopyAndMoveContentFromSearchPage     
+     * @param sitefolderName
+     * @return
+     */
+    public CopyAndMoveContentFromSearchPage selectSiteFolder(String sitefolderName)
+    {
+        PageUtils.checkMandatoryParam("sitefolderName", sitefolderName);
+        try
+        {
+            for (WebElement destination : findAndWaitForElements(folderSelector))
+            {
+                if (destination.getText() != null)
+                {
+                    if (destination.getText().equalsIgnoreCase(sitefolderName))
+                    {
+                        destination.click();
+                        break;
+                    }
+
+                }
+
+            }
+
+            return this;
+        }
+        catch (NoSuchElementException | TimeoutException e)
+        {
+            if (logger.isTraceEnabled())
+            {
+                logger.trace("Unable to find the required Site: " + sitefolderName, e);
+            }
+        }
+
+        throw new PageOperationException("Unable to select Site : " + sitefolderName);
+    }  
+   
    
 
 }

@@ -25,32 +25,17 @@
  */
 package org.alfresco.po.share.usecases.search;
 
-import static org.testng.Assert.assertTrue;
-
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.alfresco.po.share.RepositoryPage;
 import org.alfresco.po.share.enums.UserRole;
-import org.alfresco.po.share.search.CopyAndMoveContentFromSearchPage;
+import org.alfresco.po.share.search.CopyOrMoveFailureNotificationPopUp;
 import org.alfresco.po.share.search.FacetedSearchPage;
-import org.alfresco.po.share.search.SearchBox;
-import org.alfresco.po.share.search.SearchConfirmDeletePage;
 import org.alfresco.po.share.search.SearchSelectedItemsMenu;
 import org.alfresco.po.share.site.AddUsersToSitePage;
-import org.alfresco.po.share.site.NewFolderPage;
 import org.alfresco.po.share.site.SiteDashboardPage;
-import org.alfresco.po.share.site.SiteFinderPage;
-import org.alfresco.po.share.site.UploadFilePage;
 import org.alfresco.po.share.site.document.AbstractDocumentTest;
 import org.alfresco.po.share.site.document.DocumentLibraryPage;
-import org.alfresco.po.share.site.document.FileDirectoryInfo;
 import org.alfresco.po.share.steps.SiteActions;
-import org.alfresco.po.share.workflow.NewWorkflowPage;
-import org.alfresco.po.share.workflow.StartWorkFlowPage;
-import org.alfresco.po.share.workflow.WorkFlowFormDetails;
-import org.alfresco.po.share.workflow.WorkFlowType;
 import org.alfresco.test.FailedTestListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.Assert;
@@ -70,20 +55,26 @@ public class FacetedSearchBulkActionsE2ETest extends AbstractDocumentTest
 {
     private static String siteName;
     private static String siteName1;
-    private static String folderName1, folderName2;
+    private static String siteName2;    
+    private static String folderName1, folderName2, folderName3, folderName4,folderName5;
     private static String folderDescription1;
     private static String folderDescription2;
+    private static String folderDescription3;
+    private static String folderDescription4;
+    private static String folderDescription5;
+    private String filename = "efile";
     private static FacetedSearchPage resultsPage;
     private static DocumentLibraryPage documentLibPage;
+    CopyOrMoveFailureNotificationPopUp copyOrMoveFailureNotificationPopUp;
     AddUsersToSitePage addUsersToSitePage;
     private File bulkfile1;
     private File bulkfile2;
-        
+    private File bulkfile3;
+    private File bulkfile4; 
+    private File bulkfile5; 
     private String userName1 = "user1" + System.currentTimeMillis();
     private String userName2 = "user2" + System.currentTimeMillis();
-    private String userName3 = "user3" + System.currentTimeMillis();
-    private String newtaskname1 = "newtask"+ System.currentTimeMillis();
-    
+    private String userName3 = "user3" + System.currentTimeMillis();   
     @Autowired SiteActions siteActions;
    
     /**
@@ -94,19 +85,53 @@ public class FacetedSearchBulkActionsE2ETest extends AbstractDocumentTest
     @BeforeClass(groups = "alfresco-one")
     public void prepare() throws Exception
     {
-        siteName = "Asite" + System.currentTimeMillis();
-        siteName1 = "Asite1" + System.currentTimeMillis();
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
-        createUser();
+        siteName = "A1" + System.currentTimeMillis();
+        siteName1 = "AA1" + System.currentTimeMillis();
+        siteName2 = "AAA1" + System.currentTimeMillis();
+        folderName1 = "efile1fol"+ System.currentTimeMillis();       
+        folderDescription1 = String.format("Description of %s", folderName1);       
+        folderName3 = "efile11fol1"+ System.currentTimeMillis();       
+        folderDescription3 = String.format("Description of %s", folderName3);
+        folderName4 = "efile11fol1"+ System.currentTimeMillis();       
+        folderDescription4 = String.format("Description of %s", folderName4);      
         
-        siteUtil.createSite(driver, userName1, UNAME_PASSWORD, siteName, "description", "Public");
+        bulkfile3 = siteUtil.prepareFile(filename);               
+        bulkfile1 = siteUtil.prepareFile(filename);        
+        bulkfile4 = siteUtil.prepareFile(filename);         
+        
+        createUser();
+        loginAs(userName1, UNAME_PASSWORD);        
+            
+        siteUtil.createSite(driver, userName1, UNAME_PASSWORD, siteName, "description", "Private");     
+                      
         SiteDashboardPage siteDashBoard = resolvePage(driver).render();        
+        
         AddUsersToSitePage addUsersToSitePage = siteDashBoard.getSiteNav().selectAddUser().render();
         siteUtil.addUsersToSite(driver, addUsersToSitePage, userName2, UserRole.CONSUMER);        
         siteUtil.addUsersToSite(driver, addUsersToSitePage, userName3, UserRole.COLLABORATOR);
-        siteUtil.createSite(driver, userName1, UNAME_PASSWORD, siteName1, "description", "Public");
-              
+        siteUtil.createSite(driver, userName1, UNAME_PASSWORD, siteName2, "description", "public");
+        
+        //open user1 site document library (siteName)
+    	documentLibPage = siteActions.openSitesDocumentLibrary(driver, siteName);
+    	
+    	//create folder1 
+    	siteActions.createFolder(driver, folderName1, folderName1, folderDescription1);
+    	
+    	//upload file1
+    	siteActions.uploadFile(driver, bulkfile1);
+    	
+    	 //create folder1 
+    	siteActions.createFolder(driver, folderName4, folderName4, folderDescription4);
+                
+    	//upload file1
+    	siteActions.uploadFile(driver, bulkfile4);
+        
+        logout(driver);        
+        loginAs(userName3, UNAME_PASSWORD);      
+        siteUtil.createSite(driver, userName3, UNAME_PASSWORD, siteName1, "description", "public");
+        
+        logout(driver);   
+        
     }
 
     /**
@@ -117,446 +142,232 @@ public class FacetedSearchBulkActionsE2ETest extends AbstractDocumentTest
     private void createUser() throws Exception
     {
         createEnterpriseUser(userName1);
-        createEnterpriseUser(userName2);     
+        createEnterpriseUser(userName2);
         createEnterpriseUser(userName3);
-        loginAs(userName1, UNAME_PASSWORD);        
-       
      }
 
     @AfterClass(groups = "alfresco-one")
     public void teardown()
     {
         siteUtil.deleteSite(username, password, siteName);
-    }    
-    
-    //collaborator can copy his own and other user files/folders
-    @Test(groups = "alfresco-one", enabled = false)
+    } 
+        
+    /**
+     * This test is to check collaborator can copy his own and other user files/folders
+     * to his own site
+     * 
+     */
+    @Test(groups = "alfresco-one", enabled = true)
     public void CopyFileFolderAsCollaboratorTest() throws Exception
-    {    	
-    	folderName1 = "myfile1folder"+ System.currentTimeMillis();
-        folderName2 = "myfile2folder"+ System.currentTimeMillis(); 
-        folderDescription1 = String.format("Description of %s", folderName1);
+    {     	
+        folderName2 = "efile2folder"+ System.currentTimeMillis();      
         folderDescription2 = String.format("Description of %s", folderName2);
         
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();
+        //bulkfile1 = siteUtil.prepareFile();
+        bulkfile2 = siteUtil.prepareFile(filename);  	
+    	        
+        //Login as user3 (collaborator to siteName)
+        loginAs(userName3, UNAME_PASSWORD);      
+        
+        //Open user1 site document library (siteName)
+        siteActions.openSitesDocumentLibrary(driver, siteName);
+        
+    	//Create Folder2
+        siteActions.createFolder(driver, folderName2, folderName2, folderDescription2);
     	
-    	loginAs(userName1, UNAME_PASSWORD);
-    	documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
+    	//Upload File
+        siteActions.uploadFile(driver, bulkfile2);       
+            	
+        //Try retry search until results are displayed
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "efile", bulkfile2.getName(), true, 3));
         
-    	NewFolderPage newFolderPage1 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage1.createNewFolder(folderName1, folderDescription1).render();        
-       
-        UploadFilePage uploadForm1 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm1.uploadFile(bulkfile1.getCanonicalPath()).render();
+        resultsPage = siteActions.search(driver, "efile").render();
         
-        logout(driver);        
-        loginAs(userName3, UNAME_PASSWORD);        
-        
-        openSiteDocumentLibraryFromSearch(driver, siteName);
-        
-        NewFolderPage newFolderPage2 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage2.createNewFolder(folderName2, folderDescription2).render();
-        UploadFilePage uploadForm2 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm2.uploadFile(bulkfile2.getCanonicalPath()).render();
-        SearchBox search = documentLibPage.getSearch();       
-        
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile2.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());
+        //Verify files and folders are displayed in search results page
+        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName()); 
         Assert.assertTrue(resultsPage.hasResults(),bulkfile2.getName());        
         Assert.assertTrue(resultsPage.hasResults(),folderName1);
-        Assert.assertTrue(resultsPage.hasResults(),folderName2);
-    	
-        resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(bulkfile2.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();
-        resultsPage.getResultByName(folderName2).selectItemCheckBox();
-            	
-        CopyAndMoveContentFromSearchPage copyAndMoveContentFromSearchPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.COPY_TO).render();
-        copyAndMoveContentFromSearchPage.selectDestination("Repository").render();  
-        copyAndMoveContentFromSearchPage.selectSiteInRepo("Shared").render();        
-        resultsPage = copyAndMoveContentFromSearchPage.clickCopy().render();    
-                
-        openSiteDocumentLibraryFromSearch(driver, siteName);
+        Assert.assertTrue(resultsPage.hasResults(),folderName2);        
        
+        String[] selectedItems = {bulkfile1.getName(), bulkfile2.getName(), folderName1, folderName2};
+        String destination = siteName1;    	
+                    	
+        //Select the files and folders and copy to user3 own site (sitename1)
+        siteActions.performBulkActionOnSelectedResults(driver,selectedItems, SearchSelectedItemsMenu.COPY_TO, destination,false);       
+                
+        //open siteName document library
+        siteActions.openSitesDocumentLibrary(driver, siteName);
+        
+        //Verify files and folders are still displayed in user1 own site (siteName) 
+        Assert.assertTrue(documentLibPage.isItemVisble(bulkfile1.getName()), "File not displayed");  
+        Assert.assertTrue(documentLibPage.isItemVisble(bulkfile2.getName()), "File not displayed");  
+        Assert.assertTrue(documentLibPage.isItemVisble(folderName1), "File not displayed");
+        Assert.assertTrue(documentLibPage.isItemVisble(folderName2), "File not displayed");        
+      
+        //open siteName1 document library
+        documentLibPage = siteActions.openSitesDocumentLibrary(driver, siteName1);
+        
+       //Verify files and folders are displayed/copied to user3 own site (siteName1) 
         Assert.assertTrue(documentLibPage.isItemVisble(bulkfile1.getName()), "File not displayed");  
         Assert.assertTrue(documentLibPage.isItemVisble(bulkfile2.getName()), "File not displayed");  
         Assert.assertTrue(documentLibPage.isItemVisble(folderName1), "File not displayed");
         Assert.assertTrue(documentLibPage.isItemVisble(folderName2), "File not displayed");
-        
-        RepositoryPage repositoryPage = resultsPage.getNav().selectRepository().render();
-        repositoryPage.getFileDirectoryInfo("Shared").clickOnTitle().render();        
-        Assert.assertTrue(repositoryPage.isFileVisible(bulkfile1.getName()));
-        Assert.assertTrue(repositoryPage.isFileVisible(bulkfile2.getName()));
-        Assert.assertTrue(repositoryPage.isFileVisible(folderName1));
-        Assert.assertTrue(repositoryPage.isFileVisible(folderName2));       
                
-        logout(driver);
-        
-    }
+        logout(driver);        
+            
+    }    
     
-    //Collaborator can  move his own files/ folders
+    /**
+     * This test is to check collaborator can move his own file/folder
+     * to his own site
+     * 
+     */
     
-    @Test(groups = "alfresco-one", enabled = false)
+    @Test(groups = "alfresco-one", enabled = true)
     public void MoveOwnFileFolderAsCollaboratorTest() throws Exception
     {     	
-    	folderName1 = "myfile11folder3"+ System.currentTimeMillis();
-        folderName2 = "myfile12folder4"+ System.currentTimeMillis(); 
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
+    	folderName3 = "efile11folder1"+ System.currentTimeMillis();       
+        folderDescription3 = String.format("Description of %s", folderName1);       
         
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();
-        logout(driver);        
+        bulkfile3 = siteUtil.prepareFile(filename);      
+               
+        //Login as user3(collaborator) to siteName
         loginAs(userName3, UNAME_PASSWORD);        
         
+        //open user1 site document library (siteName)
+        siteActions.openSitesDocumentLibrary(driver, siteName);
+        
+        //create folder1 
+        siteActions.createFolder(driver, folderName3, folderName3, folderDescription3);
+                
+        //upload file1
+        siteActions.uploadFile(driver, bulkfile3);        
+        
+        //Try retry search until results are displayed
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "efile",bulkfile3.getName(), true, 3));        
+    
+        resultsPage = siteActions.search(driver, "efile").render();
+        Assert.assertTrue(resultsPage.hasResults(),bulkfile3.getName());       
+       
+        String[] selectedItems = {bulkfile3.getName(), folderName3};
+        String destination = siteName1;
+        
+        //Select the files and folders and Move to user3 own site (sitename1)
+        siteActions.performBulkActionOnSelectedResults(driver,selectedItems, SearchSelectedItemsMenu.MOVE_TO, destination,false);
+              
+        //open siteName document library       
         documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
         
-        NewFolderPage newFolderPage1 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage1.createNewFolder(folderName1, folderDescription1).render();
+        //Verify files and folders are not displayed in user1 own site (siteName) 
+        Assert.assertFalse(documentLibPage.isItemVisble(bulkfile3.getName()), "File not displayed");  
+        Assert.assertFalse(documentLibPage.isItemVisble(folderName3), "File not displayed");
                 
-        UploadFilePage uploadForm1 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm1.uploadFile(bulkfile1.getCanonicalPath()).render();       
+        //open siteName1 document library     
+        documentLibPage = siteActions.openSitesDocumentLibrary(driver, siteName1);
         
-        SearchBox search = documentLibPage.getSearch();             
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile1.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());   
-       
-    	resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();       
-            	
-        CopyAndMoveContentFromSearchPage copyAndMoveContentFromSearchPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.MOVE_TO).render();
-        copyAndMoveContentFromSearchPage.selectDestination("Repository").render();  
-        copyAndMoveContentFromSearchPage.selectSiteInRepo("Shared").render();        
-        resultsPage = copyAndMoveContentFromSearchPage.clickMove().render();          
-               
-        documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);              
-        
-        Assert.assertFalse(documentLibPage.isItemVisble(bulkfile1.getName()), "File not displayed");  
-        Assert.assertFalse(documentLibPage.isItemVisble(folderName1), "File not displayed");
-                
-        RepositoryPage repositoryPage = resultsPage.getNav().selectRepository().render();
-        repositoryPage.getFileDirectoryInfo("Shared").clickOnTitle().render();        
-        Assert.assertTrue(repositoryPage.isFileVisible(bulkfile1.getName()));
-        Assert.assertTrue(repositoryPage.isFileVisible(folderName1));              
+        //Verify files and folders are moved to user3 own site (siteName1) 
+        Assert.assertTrue(documentLibPage.isItemVisble(bulkfile3.getName()), "File not displayed");         
+        Assert.assertTrue(documentLibPage.isItemVisble(folderName3), "File not displayed");
         
         logout(driver);   
                 
-    }    
-       
-  //Consumer cannot copy other user files/folders to any destination folder without permission
+    }     
     
-    @Test(groups = "alfresco-one", enabled = false)
+    /**
+     * Consumer cannot copy other user files/folders to any destination folder 
+     * without permission
+     * 
+     */
+    
+    @Test(groups = "alfresco-one", enabled = true)
     public void CopyFileFolderConsumerTest() throws Exception
-    {    	   	
-    	folderName1 = "myfile11folder7"+ System.currentTimeMillis();
-        folderName2 = "myfile12folder8"+ System.currentTimeMillis(); 
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();
-    	
-    	
-    	loginAs(userName1, UNAME_PASSWORD);
-    	documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
-                
-    	NewFolderPage newFolderPage1 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage1.createNewFolder(folderName1, folderDescription1).render();
-                
-        UploadFilePage uploadForm1 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm1.uploadFile(bulkfile1.getCanonicalPath()).render();  
-                
-        logout(driver);        
-        loginAs(userName2, UNAME_PASSWORD);
+    {  	
+    	        
+        //Login as consumer (user2)
+        loginAs(userName2, UNAME_PASSWORD);        
+            
+        //Try retry search until results are displayed
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "efile",bulkfile4.getName(), true, 3));
         
-        SearchBox search = documentLibPage.getSearch();
-           
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile1.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());
-        resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();        
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();
-                    	
-        CopyAndMoveContentFromSearchPage copyAndMoveContentFromSearchPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.COPY_TO).render();
-        copyAndMoveContentFromSearchPage.selectDestination("Repository").render();  
-        copyAndMoveContentFromSearchPage.selectSiteInRepo("User Homes").render();       
+        resultsPage = siteActions.search(driver, "efile").render();
+        Assert.assertTrue(resultsPage.hasResults(),bulkfile4.getName());       
+               
+        String[] selectedItems = {bulkfile4.getName(), folderName4};
+        String destination = siteName1;   	
+		        
+        //Select the files and folders and copy to user1 own site (sitename1 where user is not a member)
+        copyOrMoveFailureNotificationPopUp = siteActions.performBulkActionOnSelectedResults(driver,selectedItems, SearchSelectedItemsMenu.COPY_TO, destination,false).render();         
+        copyOrMoveFailureNotificationPopUp.selectOk().render();
         
-        copyAndMoveContentFromSearchPage.clickCopy().render();             
-      
-        openSiteDocumentLibraryFromSearch(driver, siteName);
+        //Open user1 site document library (siteName)
+        documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
         
-        Assert.assertTrue(documentLibPage.isItemVisble(bulkfile1.getName()), "File not displayed");          
-        Assert.assertTrue(documentLibPage.isItemVisble(folderName1), "File not displayed");        
+        //Verify files and folders are still displayed in user2 own site (siteName) 
+        Assert.assertTrue(documentLibPage.isItemVisble(bulkfile4.getName()), "File not displayed");          
+        Assert.assertTrue(documentLibPage.isItemVisble(folderName4), "File not displayed");        
         
-        RepositoryPage repositoryPage = resultsPage.getNav().selectRepository().render();
-        repositoryPage.getFileDirectoryInfo("Shared").clickOnTitle().render();
-        Assert.assertFalse(repositoryPage.isFileVisible(bulkfile1.getName()));
-        Assert.assertFalse(repositoryPage.isFileVisible(folderName1));        
+        //Open user1 site document library (siteName1)
+        documentLibPage = siteActions.openSitesDocumentLibrary(driver, siteName1);        
+        
+        //Verify files and folders are not displayed in user1 own site (siteName1) 
+        Assert.assertFalse(documentLibPage.isItemVisble(bulkfile4.getName()), "File not displayed");         
+        Assert.assertFalse(documentLibPage.isItemVisble(folderName4), "File not displayed");        
           
         logout(driver);               
     }
-
-    //Collaborator cannot move his own files/folders to any destination folder without permission
     
-    @Test(groups = "alfresco-one", enabled = false)
+    /**
+     * Collaborator cannot move his own files/folders to any destination folder 
+     * without permission
+     * 
+     */
+    
+    @Test(groups = "alfresco-one", enabled = true)
     public void MoveFileFolderCollaboratorTest() throws Exception
     {    	   	
-    	folderName1 = "myfile11folder7"+ System.currentTimeMillis();
-        folderName2 = "myfile12folder8"+ System.currentTimeMillis(); 
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();
+    	folderName5 = "efile11fold2"+ System.currentTimeMillis();        
+        folderDescription5 = String.format("Description of %s", folderName5);       
+        bulkfile5 = siteUtil.prepareFile(filename);
+            	
+    	//Login as user3(collaborator) to siteName
+        loginAs(userName3, UNAME_PASSWORD);
     	
-    	
-    	loginAs(userName3, UNAME_PASSWORD);
-    	documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
+        //Open user1 site document library (siteName)
+        siteActions.openSitesDocumentLibrary(driver, siteName);
                 
-    	NewFolderPage newFolderPage1 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage1.createNewFolder(folderName1, folderDescription1).render();
+        //create folder1 
+    	siteActions.createFolder(driver, folderName5, folderName5, folderDescription5);
                 
-        UploadFilePage uploadForm1 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm1.uploadFile(bulkfile1.getCanonicalPath()).render();           
+    	//upload file1
+        siteActions.uploadFile(driver, bulkfile5);               
+              
+        //Try retry search until results are displayed
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "efile",bulkfile5.getName(), true, 3));
+        resultsPage = siteActions.search(driver, "efile").render();
+        Assert.assertTrue(resultsPage.hasResults(),bulkfile5.getName());
+        
+        String[] selectedItems = {bulkfile5.getName(), folderName5};
+        String destination = siteName2;
+        
+        //Select the files and folders and Move to user1 own site (sitename2 where user3 is not a member)
+        copyOrMoveFailureNotificationPopUp = siteActions.performBulkActionOnSelectedResults(driver,selectedItems, SearchSelectedItemsMenu.MOVE_TO, destination,false).render();
+        copyOrMoveFailureNotificationPopUp.selectOk().render();
+                
+        //Open user1 site document library (siteName)
+        documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);        
+        
+        //Verify files and folders are still displayed in user1 own site (siteName) 
+        Assert.assertTrue(documentLibPage.isItemVisble(bulkfile5.getName()), "File not displayed");          
+        Assert.assertTrue(documentLibPage.isItemVisble(folderName5), "File not displayed");    
                
-        SearchBox search = documentLibPage.getSearch();
-           
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile1.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());
-        resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();        
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();
-                    	
-        CopyAndMoveContentFromSearchPage copyAndMoveContentFromSearchPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.MOVE_TO).render();
-        copyAndMoveContentFromSearchPage.selectDestination("Repository").render();  
-        copyAndMoveContentFromSearchPage.selectSiteInRepo("User Homes").render();       
+        //Open user1 site document library (siteName2 where user3 is not a site member)
+        documentLibPage = siteActions.openSitesDocumentLibrary(driver, siteName2);
         
-        copyAndMoveContentFromSearchPage.clickMove().render();        
-      
-        openSiteDocumentLibraryFromSearch(driver, siteName);
-        
-        Assert.assertTrue(documentLibPage.isItemVisble(bulkfile1.getName()), "File not displayed");          
-        Assert.assertTrue(documentLibPage.isItemVisble(folderName1), "File not displayed");        
-        
-        RepositoryPage repositoryPage = resultsPage.getNav().selectRepository().render();
-        repositoryPage.getFileDirectoryInfo("Shared").clickOnTitle().render();
-        Assert.assertFalse(repositoryPage.isFileVisible(bulkfile1.getName()));
-        Assert.assertFalse(repositoryPage.isFileVisible(folderName1));        
+        //Verify files and folders are not displayed in user1 own site (siteName2) 
+        Assert.assertFalse(documentLibPage.isItemVisble(bulkfile5.getName()), "File not displayed");         
+        Assert.assertFalse(documentLibPage.isItemVisble(folderName5), "File not displayed");        
           
         logout(driver);               
     }
-
-
-    //Delete and move option not displayed for Collaborator when own and other user files/folders are selected
-    //bug sha-1657
-    @Test(groups = "alfresco-one", enabled = false)
-    public void BulkDeleteAndMoveTest() throws Exception
-    {    	   	
-
-    	folderName1 = "myfile11folder9"+ System.currentTimeMillis();
-        folderName2 = "myfile12folder10"+ System.currentTimeMillis();
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();
-    	
-    	loginAs(userName1, UNAME_PASSWORD);
-    	documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
-                
-    	NewFolderPage newFolderPage1 = documentLibPage.getNavigation().selectCreateNewFolder().render();
-        documentLibPage = newFolderPage1.createNewFolder(folderName1, folderDescription1).render();
-                
-        UploadFilePage uploadForm1 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm1.uploadFile(bulkfile1.getCanonicalPath()).render();       
-        
-        logout(driver);        
-        loginAs(userName3, UNAME_PASSWORD);
-        
-        documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
-        
-        NewFolderPage newFolderPage2 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage2.createNewFolder(folderName2, folderDescription2).render();
-        
-        UploadFilePage uploadForm2 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm2.uploadFile(bulkfile2.getCanonicalPath()).render();
-        
-        SearchBox search = documentLibPage.getSearch();
-           
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile2.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());        
-          	
-    	resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(bulkfile2.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();
-        resultsPage.getResultByName(folderName2).selectItemCheckBox();
-            	
-        Assert.assertFalse(resultsPage.getNavigation().isSelectedItemsOptionDisplayed(SearchSelectedItemsMenu.DELETE));
-        Assert.assertFalse(resultsPage.getNavigation().isSelectedItemsOptionDisplayed(SearchSelectedItemsMenu.MOVE_TO));
-                 
-        logout(driver);        
-        
-    }
-    
-    //Collaborator can delete his own file/folders in bulk
-    
-    @Test(groups = "alfresco-one", enabled = false)
-    public void BulkDeleteOwnFileFoldersTest() throws Exception
-    {    	   	
-    	folderName1 = "myfile11folder11"+ System.currentTimeMillis();
-        folderName2 = "myfile12folder12"+ System.currentTimeMillis(); 
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();    	
-    	        
-        logout(driver);        
-        loginAs(userName3, UNAME_PASSWORD);
-        
-        documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
-        
-        NewFolderPage newFolderPage2 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage2.createNewFolder(folderName1, folderDescription1).render();
-        
-        UploadFilePage uploadForm2 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm2.uploadFile(bulkfile1.getCanonicalPath()).render();
-        
-        SearchBox search = documentLibPage.getSearch();
-            
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile1.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());
-        Assert.assertTrue(resultsPage.hasResults(),folderName1);          	
-    	
-        resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();
-        
-        SearchConfirmDeletePage searchConfirmDeletePage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.DELETE).render();
-        searchConfirmDeletePage.clickDelete().render();
-               
-        SiteFinderPage sitefinder = siteUtil.searchSite(driver, siteName);
-        SiteDashboardPage sitedash = sitefinder.selectSite(siteName).render();
-        documentLibPage = sitedash.getSiteNav().selectDocumentLibrary().render();
-       
-        Assert.assertFalse(documentLibPage.isItemVisble(bulkfile1.getName()), "File not displayed");  
-        Assert.assertFalse(documentLibPage.isItemVisble(folderName1), "File not displayed");
-        
-        logout(driver);    
-                
-    }
-    
-    
-    //Collaborator can download own and other user files and folders
-    
-    @Test(groups = "alfresco-one", enabled = false)
-    public void CollaboratorBulkDownloadTest() throws Exception
-    {    	   	
-    	folderName1 = "myfile11folder13"+ System.currentTimeMillis();
-        folderName2 = "myfile12folder14"+ System.currentTimeMillis(); 
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();
-        
-    	loginAs(userName1, UNAME_PASSWORD);
-    	documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
-                        
-        NewFolderPage newFolderPage1 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage1.createNewFolder(folderName1, folderDescription1).render();
-        
-        UploadFilePage uploadForm1 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm1.uploadFile(bulkfile1.getCanonicalPath()).render();       
-        
-        logout(driver);        
-        loginAs(userName3, UNAME_PASSWORD);        
-        
-        documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
-                
-        NewFolderPage newFolderPage2 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage2.createNewFolder(folderName2, folderDescription2).render();
-        
-        UploadFilePage uploadForm2 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm2.uploadFile(bulkfile2.getCanonicalPath()).render();
-        
-        SearchBox search = documentLibPage.getSearch();        
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile2.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile2.getName());
-        Assert.assertTrue(resultsPage.hasResults(),folderName1);
-        Assert.assertTrue(resultsPage.hasResults(),folderName2);        
-          	
-    	resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(bulkfile2.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();
-        resultsPage.getResultByName(folderName2).selectItemCheckBox();
-        
-        resultsPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.DOWNLOAD_AS_ZIP).render();
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile2.getName());
-        Assert.assertTrue(resultsPage.hasResults(),folderName1);
-        Assert.assertTrue(resultsPage.hasResults(),folderName2);
-                      
-        logout(driver);            
-        
-        
-    }
-     
-    //Consumer can create a work flow on other user files and folders 
-    
-    @Test(groups = "alfresco-one", enabled = false)
-    public void bulkStartWorkFlowTest() throws Exception
-    {    	   	
-
-    	folderName1 = "myfile11folder15"+ System.currentTimeMillis();
-        folderName2 = "myfile12folder16"+ System.currentTimeMillis(); 
-        folderDescription1 = String.format("Description of %s", folderName1);
-        folderDescription2 = String.format("Description of %s", folderName2);
-        bulkfile1 = siteUtil.prepareFile();
-        bulkfile2 = siteUtil.prepareFile();
-        
-    	loginAs(userName1, UNAME_PASSWORD);
-    	documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);        
-                        
-        NewFolderPage newFolderPage1 = documentLibPage.getNavigation().selectCreateNewFolder();
-        documentLibPage = newFolderPage1.createNewFolder(folderName1, folderDescription1).render();
-        
-        UploadFilePage uploadForm1 = documentLibPage.getNavigation().selectFileUpload().render();
-        documentLibPage = uploadForm1.uploadFile(bulkfile1.getCanonicalPath()).render();       
-        
-        logout(driver);        
-        loginAs(userName2, UNAME_PASSWORD);        
-        
-        documentLibPage = openSiteDocumentLibraryFromSearch(driver, siteName);
-            
-        SearchBox search = documentLibPage.getSearch();          
-        resultsPage = search.search("myfile").render();
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile",bulkfile1.getName(), true, 3));
-        Assert.assertTrue(resultsPage.hasResults(),bulkfile1.getName());
-        Assert.assertTrue(resultsPage.hasResults(),folderName1);     
-           	
-        resultsPage.getResultByName(bulkfile1.getName()).selectItemCheckBox();
-        resultsPage.getResultByName(folderName1).selectItemCheckBox();
-                
-        StartWorkFlowPage startWorkFlowPage = resultsPage.getNavigation().selectActionFromSelectedItemsMenu(SearchSelectedItemsMenu.START_WORKFLOW).render();
-        Assert.assertTrue(startWorkFlowPage.isWorkFlowTextPresent());
-        NewWorkflowPage newWorkflowPage = ((NewWorkflowPage) startWorkFlowPage.getWorkflowPage(WorkFlowType.NEW_WORKFLOW)).render();
-
-        List<String> reviewers = new ArrayList<String>();
-        reviewers.add(username);
-        WorkFlowFormDetails formDetails = new WorkFlowFormDetails(siteName, newtaskname1, reviewers);
-        newWorkflowPage.startWorkflow(formDetails).render();
-        openSiteDocumentLibraryFromSearch(driver, siteName);
-        FileDirectoryInfo thisRow = documentLibPage.getFileDirectoryInfo(bulkfile1.getName());
-        assertTrue(thisRow.isPartOfWorkflow(), "Document should not be part of workflow.");
-        FileDirectoryInfo thisRow1 = documentLibPage.getFileDirectoryInfo(folderName1);
-        assertTrue(thisRow1.isPartOfWorkflow(), "Document should not be part of workflow.");
-                              
-        logout(driver);   
-                
-    } 
-        
-
 }
 

@@ -35,6 +35,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import javax.imageio.ImageIO;
 
+import org.alfresco.dataprep.ContentService;
+import org.alfresco.dataprep.DataListsService;
+import org.alfresco.dataprep.SitePagesService;
 import org.alfresco.dataprep.UserService;
 import org.alfresco.po.share.DashBoardPage;
 import org.alfresco.po.share.FactoryPage;
@@ -54,6 +57,12 @@ import org.alfresco.po.share.util.SiteUtil;
 import org.alfresco.po.share.workflow.MyWorkFlowsPage;
 import org.alfresco.selenium.FetchUtil;
 import org.alfresco.test.AlfrescoTests;
+import org.apache.commons.httpclient.Credentials;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -100,11 +109,16 @@ public abstract class AbstractTest extends AbstractTestNGSpringContextTests impl
     @Value("${render.error.popup.time}") protected long popupRendertime;
     @Value("${share.version}") protected String alfrescoVersion;
     @Value("${render.page.wait.time}") protected long maxPageWaitTime;
+    @Value("${alfresco.server}") protected String alfrescoSever;
+    @Value("${alfresco.port}") protected String alfrescoPort;
     @Autowired protected UserProfile anotherUser;
     @Autowired protected FactoryPage factoryPage;
     @Autowired protected FactoryShareDashlet dashletFactory;
     @Autowired protected ShareUtil shareUtil;
     @Autowired protected SiteUtil siteUtil;
+    @Autowired protected SitePagesService sitePagesService;
+    @Autowired protected DataListsService dataListPagesService;
+    @Autowired protected ContentService contentService;
     @Autowired protected UserService userService;
     @Autowired protected CmmActions cmmActions;
     @Autowired protected SiteActions siteActions;
@@ -112,8 +126,10 @@ public abstract class AbstractTest extends AbstractTestNGSpringContextTests impl
     @Autowired protected UserProfileActions userActions;
     
     public static Integer retrySearchCount = 3;
+    protected long solrWaitTime = 20000;
     protected WebDriver driver;
     protected static final String UNAME_PASSWORD = "password";
+    
     
 
     @BeforeClass(alwaysRun = true)
@@ -236,7 +252,7 @@ public abstract class AbstractTest extends AbstractTestNGSpringContextTests impl
     }
 
     /**
-     * Function to create user on Enterprise using UI
+     * Function to create user on Enterprise using API
      *
      * @param uname - This should always be unique. So the user of this method needs to verify it is unique.
      *                eg. - "testUser" + System.currentTimeMillis();
@@ -319,5 +335,24 @@ public abstract class AbstractTest extends AbstractTestNGSpringContextTests impl
         return factoryPage.getPage(driver);
     }
     
+    
+    /**
+     * Executes delete request
+     * 
+     * @param url
+     * @param username
+     * @param password
+     * @return
+     * @throws HttpException
+     * @throws IOException
+     */
+    protected int executeDeleteRequest(String url, String username, String password) throws HttpException, IOException
+    {
+        HttpClient client = new HttpClient();
+        Credentials defaultcreds = new UsernamePasswordCredentials(username, password);
+        client.getState().setCredentials(AuthScope.ANY, defaultcreds);
+        DeleteMethod method = new DeleteMethod(url);
+        return client.executeMethod(method); 
+    }
     
 }

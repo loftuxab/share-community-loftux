@@ -452,6 +452,7 @@
       {
          var jsNode = record.jsNode,
             path = record.location.path,
+            repoPath = record.location.repoPath,
             file,
             recordSiteName = $isValueSet(record.location.site) ? record.location.site.name : null;
          if (jsNode.isLink)
@@ -475,6 +476,10 @@
             {
                site: recordSiteName
             });
+         }
+         else if ((Alfresco.constants.PAGECONTEXT == "shared" && repoPath != "/Shared") || (Alfresco.constants.PAGECONTEXT == "mine" && repoPath != "/"))
+         {
+            window.location = "/share/page/repository?file=" + encodeURIComponent(file) + "&path=" + encodeURIComponent(repoPath);
          }
          else
          {
@@ -1324,7 +1329,7 @@
 
       _aos_tryToLaunchOfficeByMsProtocolHandler: function dlA__aos_tryToLaunchOfficeByMsProtocolHandler(officeLauncher, protocolHandler, url)
       {
-          var protocolUrl = protocolHandler + ':ofe%7Cu%7C' + encodeURI(url);
+          var protocolUrl = protocolHandler + ':ofe%7Cu%7C' + url;
           var protocolHandlerPresent = false;
 
           var input = document.createElement('input');
@@ -1848,6 +1853,17 @@
       onActionCopyTo: function dlA_onActionCopyTo(record)
       {
          this._copyMoveTo("copy", record);
+      },
+
+      /**
+       * Link single document or folder.
+       *
+       * @method onActionLinkTo
+       * @param record {object} Object literal representing the file or folder to be actioned
+       */
+      onActionLinkTo: function dlA_onActionCopyTo(record)
+      {
+         this._copyMoveTo("link", record);
       },
 
       /**
