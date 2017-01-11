@@ -628,7 +628,10 @@
               window.location = mydocumentDetailsUrl;
               if (oldNodeRef == newNodeRef)
               {
-                 window.location.reload();
+                  window.setTimeout(function(){
+                      window.location.reload();
+                  }, 1500);
+                 
               }
         }); 
 
