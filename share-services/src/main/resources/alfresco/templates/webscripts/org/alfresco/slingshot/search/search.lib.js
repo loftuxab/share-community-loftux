@@ -548,7 +548,7 @@ function getItem(siteId, containerId, pathParts, node, populate, meta)
       }
    }
 
-   if (meta && meta.highlighting)
+   if (item && meta && meta.highlighting)
    {
       item.highlighting = highlighting;
    }
