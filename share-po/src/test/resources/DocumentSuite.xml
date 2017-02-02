@@ -91,7 +91,7 @@
             <class name="org.alfresco.po.share.site.document.FolderDetailsPageTest"/>
         </classes>
     </test>
-        <test name="TakeOwnershipTest">
+    <test name="TakeOwnershipTest">
         <classes>
             <class name="org.alfresco.po.share.site.document.TakeOwnershipTest"/>
         </classes>
@@ -138,4 +138,14 @@
             <class name="org.alfresco.po.share.site.document.VersionDetailsTest"/>
         </classes>
     </test>
+    <test name="CreateLinksTest">
+        <classes>
+            <class name="org.alfresco.po.share.site.document.CreateLinkToFileFolderTest"/>
+        </classes>
+    </test>   
+    <test name="LinkActionsTest">
+        <classes>
+            <class name="org.alfresco.po.share.site.document.LinkToFileFolderActionsTest"/>
+        </classes>
+    </test>     
 </suite>

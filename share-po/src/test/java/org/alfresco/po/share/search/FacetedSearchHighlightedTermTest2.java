@@ -25,17 +25,11 @@ package org.alfresco.po.share.search;
 import org.alfresco.dataprep.CMISUtil;
 import org.alfresco.dataprep.DataListsService;
 import org.alfresco.po.AbstractTest;
-import org.alfresco.po.share.DashBoardPage;
-import org.alfresco.po.share.SharePage;
-import org.alfresco.po.share.site.SitePageType;
 import org.alfresco.test.FailedTestListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Listeners;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
 import java.util.Date;
 
@@ -44,8 +38,8 @@ import java.util.Date;
  *
  * @author CorinaZ
  */
-
 @Listeners(FailedTestListener.class)
+@Test(groups = { "alfresco-one" })
 public class FacetedSearchHighlightedTermTest2 extends AbstractTest
 {
     private static Log logger = LogFactory.getLog(LiveSearchDropdownTest.class);
@@ -59,42 +53,38 @@ public class FacetedSearchHighlightedTermTest2 extends AbstractTest
     protected String discussionName;
     protected String dataListName;
 
-    private DashBoardPage dashBoard;
-    protected SharePage sharepage;
-
     @BeforeClass(groups = { "alfresco-one" })
     public void prepare() throws Exception
     {
         try
         {
-            dashBoard = loginAs(username, password);
+            loginAs(username, password);
 
             siteName = "mysite-" + +System.currentTimeMillis();
-            ;
-            fileName1 = "myfile1-" + +System.currentTimeMillis();
-            ;
-            fileName2 = "myfile2-" + +System.currentTimeMillis();
-            ;
-            calendarName = "calendarevent" + +System.currentTimeMillis();
-            ;
-            wikiPage = "wikipage" + +System.currentTimeMillis();
-            ;
-            linkName = "link" + +System.currentTimeMillis();
-            ;
-            blogName = "blogpost" + +System.currentTimeMillis();
-            ;
-            discussionName = "disscution" + +System.currentTimeMillis();
-            ;
-            dataListName = "datalist" + +System.currentTimeMillis();
-            ;
 
-            Date todayDate = new Date();
-            todayDate.getTime();
+            fileName1 = "myfile1-" + +System.currentTimeMillis();
+
+            fileName2 = "myfile2-" + +System.currentTimeMillis();
+
+            calendarName = "calendarevent" + +System.currentTimeMillis();
+
+            wikiPage = "wikipage" + +System.currentTimeMillis();
+
+            linkName = "link" + +System.currentTimeMillis();
+
+            blogName = "blogpost" + +System.currentTimeMillis();
+
+            discussionName = "disscution" + +System.currentTimeMillis();
+
+            dataListName = "datalist" + +System.currentTimeMillis();
+
+            Date todaysDate = new Date();
+            todaysDate.getTime();
 
             siteUtil.createSite(driver, username, password, siteName, "description", "Public");
             contentService.createDocument(username, password, siteName, CMISUtil.DocumentType.TEXT_PLAIN, fileName1, fileName1);
             contentService.createDocument(username, password, siteName, CMISUtil.DocumentType.TEXT_PLAIN, fileName2, fileName2);
-            sitePagesService.addCalendarEvent(username, password, siteName, calendarName, calendarName, calendarName, todayDate, todayDate, null, null, false, null);
+            sitePagesService.addCalendarEvent(username, password, siteName, calendarName, calendarName, calendarName, todaysDate, todaysDate, null, null, false, null);
             sitePagesService.createWiki(username, password, siteName, wikiPage, wikiPage, null);
             sitePagesService.createLink(username, password, siteName, linkName, "www.google.com", linkName, true, null);
             sitePagesService.createBlogPost(username, password, siteName, blogName, blogName, false, null);
@@ -140,16 +130,16 @@ public class FacetedSearchHighlightedTermTest2 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 2)
     public void testHighlightedConjunction() throws Exception
     {
-        // TODO: Replace with siteAction.search or searchAndRetry as appropriate. dashBoard could return stale element reference
-        SearchBox search = dashBoard.getSearch();
-        FacetedSearchPage resultPage = search.search("myfile AND myfile1").render();
 
-        FacetedSearchResult resultItem1 = (FacetedSearchResult) resultPage.getResultByName(fileName1);
-        Assert.assertTrue(resultItem1.isItemHighlighted(ItemHighlighted.NAME));
-        Assert.assertEquals(resultItem1.getHighlightedText(ItemHighlighted.NAME), "myfile1");
+
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile AND myfile1", fileName1, true, 3));
+
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName1, ItemHighlighted.NAME, "myfile1", true),
+                "Highlighting results do not match");
 
         // verify that filename2 is not present on the results list
-        Assert.assertFalse(false, String.valueOf(resultPage.isItemPresentInResultsList(SitePageType.DOCUMENT_LIBRARY, fileName2)));
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile AND myfile1", fileName2, false, 3));
+
     }
 
     /**
@@ -159,15 +149,14 @@ public class FacetedSearchHighlightedTermTest2 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 3)
     public void testHighlightedNegation1() throws Exception
     {
-        SearchBox search = dashBoard.getSearch();
-        FacetedSearchPage resultPage = search.search("myfile NOT myfile1").render();
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile NOT myfile1", fileName2, true, 3));
 
-        FacetedSearchResult resultItem1 = (FacetedSearchResult) resultPage.getResultByName(fileName2);
-        Assert.assertTrue(resultItem1.isItemHighlighted(ItemHighlighted.NAME));
-        Assert.assertEquals(resultItem1.getHighlightedText(ItemHighlighted.NAME), "myfile");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName2, ItemHighlighted.NAME, "myfile", true),
+                "Highlighting results do not match");
 
-        // verify that filename2 is not present on the results list
-        Assert.assertFalse(false, String.valueOf(resultPage.isItemPresentInResultsList(SitePageType.DOCUMENT_LIBRARY, fileName1)));
+        // verify that filename1 is not present on the results list
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile NOT myfile1", fileName1, false, 3));
+
     }
 
     /**
@@ -177,20 +166,12 @@ public class FacetedSearchHighlightedTermTest2 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 4)
     public void testHighlightedNegation2() throws Exception
     {
-        // SearchBox search = dashBoard.getSearch();
-        // FacetedSearchPage resultPage = search.search("myfile !myfile1").render();
-        //
-        // FacetedSearchResult resultItem1 = (FacetedSearchResult) resultPage.getResultByName(fileName2);
-        // Assert.assertTrue(resultItem1.isItemHighlighted(ItemHighlighted.NAME));
-        // Assert.assertEquals(resultItem1.getHighlightedText(ItemHighlighted.NAME), "myfile");
-
         Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile !myfile1", fileName2, true, 3));
 
         Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName2, ItemHighlighted.NAME, "myfile", true),
                 "Highlighting results do not match");
 
         // verify that filename1 is not present on the results list
-        // Assert.assertFalse(false, String.valueOf(resultPage.isItemPresentInResultsList(SitePageType.DOCUMENT_LIBRARY, fileName1)));
         Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "myfile !myfile1", fileName1, false, 3));
 
     }

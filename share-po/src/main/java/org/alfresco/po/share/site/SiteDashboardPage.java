@@ -263,12 +263,14 @@ public class SiteDashboardPage extends SitePage implements Dashboard
         try
         {
             siteNavigation.selectConfigure();
-            return driver.findElement(AbstractSiteNavigation.CUSTOMIZE_SITE_DASHBOARD).isDisplayed();
+            WebElement option = driver.findElement(AbstractSiteNavigation.CUSTOMIZE_SITE_DASHBOARD);
+            return option.isDisplayed();
         }
-        catch (NoSuchElementException exc)
+        catch (NoSuchElementException nse)
         {
-            return false;
+        	logger.error("Cannot find CustomizeSiteDashboard link.", nse);
         }
+        return false;
     }
 
     /**
@@ -283,17 +285,19 @@ public class SiteDashboardPage extends SitePage implements Dashboard
         try
         {
             siteNavigation.selectConfigure();
-            return driver.findElement(AbstractSiteNavigation.EDIT_SITE_DETAILS).isDisplayed();
+            WebElement option = driver.findElement(AbstractSiteNavigation.EDIT_SITE_DETAILS);
+            return option.isDisplayed();
         }
-        catch (NoSuchElementException exc)
+        catch (NoSuchElementException nse)
         {
-            return false;
+        	logger.error("Cannot find Edit Site Details Link.", nse);
         }
+        return false;
     }
 
 
     /**
-     * Method to find if the Customize Site link is displayed
+     * Method to find if the Leave Site link is displayed
      * 
      * @return True if displayed
      */
@@ -303,12 +307,56 @@ public class SiteDashboardPage extends SitePage implements Dashboard
         try
         {
             siteNavigation.selectConfigure();
-            return driver.findElement(AbstractSiteNavigation.LEAVE_SITE).isDisplayed();
+            WebElement option = driver.findElement(AbstractSiteNavigation.LEAVE_SITE);
+            return option.isDisplayed();
         }
-        catch (NoSuchElementException exc)
+        catch (NoSuchElementException nse)
         {
-            return false;
+            logger.error("Cannot find Leave Site Link.", nse);
         }
+        return false;
+     }
+    
+    /**
+     * Method to find if the Request to Join/Join Site link is displayed
+     * 
+     * @return True if displayed
+     */
+
+    public boolean isJoinSiteLinkPresent()
+    {
+        try
+        {
+            siteNavigation.selectConfigure();
+            WebElement option = driver.findElement(AbstractSiteNavigation.JOIN_SITE);
+            return option.isDisplayed();
+        }
+        catch (NoSuchElementException nse)
+        {
+        	logger.error("Cannot find Edit Site Details Link.", nse);
+        }
+        return false;
+    }
+    
+    /**
+     * Method to find if the Cancel site request link is displayed
+     * 
+     * @return True if displayed
+     */
+
+    public boolean isCancelSiteRequestLinkPresent()
+    {
+        try
+        {
+            siteNavigation.selectConfigure();
+            WebElement option = driver.findElement(AbstractSiteNavigation.CANCEL_SITE_REQUEST);
+            return option.isDisplayed();
+        }
+        catch (NoSuchElementException nse)
+        {
+        	logger.error("Cannot find Cancel Site Request Link.", nse);
+        }
+        return false;
     }
 
     /**
@@ -340,12 +388,14 @@ public class SiteDashboardPage extends SitePage implements Dashboard
     {
         try
         {
-            return driver.findElement(MORE_PAGES_BUTTON).isDisplayed();
+            WebElement option = driver.findElement(MORE_PAGES_BUTTON);
+            return option.isDisplayed();
         }
-        catch (Exception e)
+        catch (NoSuchElementException nse)
         {
-            return false;
+        	logger.error("Cannot find Pages More Button.", nse);
         }
+        return false;
     }
 
     /**
@@ -410,6 +460,32 @@ public class SiteDashboardPage extends SitePage implements Dashboard
             logger.error("Request to Join Site button not found", nse);
         }
         throw new PageOperationException("Unable to Request to Join Site");
+    }
+    
+    /**
+     * Method to request to cancel the site joining request
+     * 
+     * @return HtmlPage
+     */
+
+    public HtmlPage cancelRequestToJoinSite()
+    {
+        try
+        {
+            siteNavigation.selectConfigure();
+            WebElement cancelRequestToJoinSite = driver.findElement(AbstractSiteNavigation.CANCEL_SITE_REQUEST);
+            if (cancelRequestToJoinSite.isDisplayed())
+            {
+            	cancelRequestToJoinSite.click();   
+            	waitUntilAlert();
+                return factoryPage.getPage(driver);
+            }
+        }
+        catch (NoSuchElementException nse)
+        {
+            logger.error("Cancel Request to Join Site button not found", nse);
+        }
+        throw new PageOperationException("Unable to cancel Request to Join Site");
     }
     
     

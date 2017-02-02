@@ -390,7 +390,7 @@ public abstract class SharePage extends Page
      */
     protected HtmlPage submit(By locator, ElementState elementState)
     {
-        WebElement button = driver.findElement(locator);
+        WebElement button = findFirstDisplayedElement(locator);
         String id = button.getAttribute("id");
         button.click();
         By locatorById = By.id(id);
@@ -422,6 +422,7 @@ public abstract class SharePage extends Page
                 }
                 catch (PageRenderTimeException| ClassCastException exception)
                 {
+                    logger.info("Error Submitting the page:", exception);
                     continue;
                 }
             }
@@ -776,9 +777,32 @@ public abstract class SharePage extends Page
     {
         return findAndWait(FOOTER_LOGO).getAttribute("src");
     }
+    
     public WebElement findByKey(final String id)
     {
         By criteria = By.id(getValue(id));
         return driver.findElement(criteria);
+    }
+    
+    /**
+     * Common method to wait for the next solr indexing cycle.
+     * 
+     * @param driver WebDriver Instance
+     * @param waitMiliSec Wait duration in milliseconds
+     */
+    public HtmlPage webDriverWait(long waitMiliSec)
+    {
+        synchronized (this)
+        {
+            try
+            {
+                this.wait(waitMiliSec);
+            }
+            catch (InterruptedException e)
+            {
+                // Discussed not to throw any exception
+            }
+        }
+        return this;
     }
 }

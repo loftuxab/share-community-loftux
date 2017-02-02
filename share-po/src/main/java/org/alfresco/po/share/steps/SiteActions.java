@@ -46,12 +46,16 @@ import org.alfresco.po.share.dashlet.SiteActivitiesDashlet;
 import org.alfresco.po.share.dashlet.SiteContentDashlet;
 import org.alfresco.po.share.dashlet.MyActivitiesDashlet.LinkType;
 import org.alfresco.po.share.enums.Dashlets;
+import org.alfresco.po.share.enums.UserRole;
 import org.alfresco.po.share.exception.ShareException;
 import org.alfresco.po.share.exception.UnexpectedSharePageException;
+import org.alfresco.po.share.site.AddGroupsPage;
+import org.alfresco.po.share.site.AddUsersToSitePage;
 import org.alfresco.po.share.site.ConfirmRequestToJoinPopUp;
 import org.alfresco.po.share.site.CreateSitePage;
 import org.alfresco.po.share.site.NewFolderPage;
 import org.alfresco.po.share.site.SiteDashboardPage;
+import org.alfresco.po.share.site.SiteGroupsPage;
 import org.alfresco.po.share.site.SiteMembersPage;
 import org.alfresco.po.share.site.SitePage;
 import org.alfresco.po.share.site.UpdateFilePage;
@@ -80,11 +84,13 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.springframework.stereotype.Component;
 
+
 /**
  * Share actions - All the common steps of site action
  * 
  * @author sprasanna
  * @author mbhave
+ * @author charu
  */
 @Component
 public class SiteActions extends CommonActions
@@ -1256,6 +1262,17 @@ public class SiteActions extends CommonActions
     }
     
     /**
+     * Utility for cancel requesting to join a site when user already logged in
+     * @param  siteName 
+     */
+    public  HtmlPage cancelRequestToJoinSite(WebDriver driver, String siteName)
+    {
+    	SiteDashboardPage siteDashboardPage = openSiteDashboard(driver, siteName).render(); 
+    	siteDashboardPage.cancelRequestToJoinSite().render();
+        return factoryPage.getPage(driver).render();
+    }  
+        
+    /**
      * Utility for navigating to PendingRequset Page when user already logged in
      * @param  siteName     
      */
@@ -1265,5 +1282,44 @@ public class SiteActions extends CommonActions
     	SiteMembersPage siteMembersPage = siteDashboardPage.getSiteNav().selectMembersPage().render();
     	return siteMembersPage.navigateToPendingInvites().render();
     	
+    } 
+    
+    /**
+     * Utility for verify user role is as specified
+     * @param {@link WebDriver} driver
+     * @param userName
+     * @param siteName
+     * @return {@link Boolean} expectedRole    
+     */
+    public Boolean checkUserRole(WebDriver driver, String userName, String siteName, UserRole userRole, Boolean expectedRole )
+    {
+       // Open site dashboard
+       SiteDashboardPage siteDashboardPage = openSiteDashboard(driver, siteName).render();
+
+       // Verify user is a member of site with specified role
+       SiteMembersPage siteMembersPage = siteDashboardPage.getSiteNav().selectMembersPage().render();
+       return siteMembersPage.checkUserRole(userName, userRole);
+    }
+    
+    /**
+     * Utility to add group to site with any role, when user is on site dashboard
+     * @param siteName
+     * @param groupName
+     * @param {@link WebDriver} driver
+     * @return {@link Boolean} expectedRole    
+     */
+    
+    public HtmlPage addGroupToSite(WebDriver driver, String siteName, String groupName, UserRole userRole)
+    {
+    	SiteDashboardPage siteDashboardPage = openSiteDashboard(driver, siteName).render();
+
+        // Navigate to Add Users page
+    	AddUsersToSitePage addUsersToSitePage = siteDashboardPage.getSiteNav().selectAddUser().render();
+    	SiteGroupsPage siteGroupsPage = addUsersToSitePage.navigateToSiteGroupsPage().render();
+
+        // Add groupName to site with any role
+    	AddGroupsPage addGroupsPage = siteGroupsPage.navigateToAddGroupsPage().render();
+        return addGroupsPage.addGroup(groupName, userRole).render();
+        
     }
 }
