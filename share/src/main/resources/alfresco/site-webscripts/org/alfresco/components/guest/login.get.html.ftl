@@ -19,9 +19,9 @@
       
       <@markup id="header">
          <div class="theme-company-logo"></div>
-         <div class="product-name">${msg("app.name")}</div>
+         <div class="product-name">${msg("app.community.loftux")}</div>
          <div class="product-tagline">${msg("app.tagline")}</div>
-         <div class="product-community">${msg("app.community")}</div>
+         <#-- <div class="product-community">${msg("app.community")}</div> -->
       </@markup>
       
       <#if errorDisplay == "container">
@@ -84,8 +84,8 @@
       </div>
       
       <@markup id="footer">
+      <div class="login-copy">${msg("label.copyright.byloftux.tag")}</div>
       <div class="login-copy">${msg("label.copyright")}</div>
-      <div class="login-copy">${msg("label.copyrightbyLoftux")}</div>
       <div class="login-tagline"></div>
       </@markup>
    </@>

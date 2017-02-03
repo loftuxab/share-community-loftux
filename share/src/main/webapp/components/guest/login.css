@@ -177,5 +177,55 @@ body.ENTERPRISE
 
 body.UNKNOWN
 {
-   background-color: #f8982b;
+   background-color: #007AFF;
+}
+
+/*
+ * Overrides for LXCommunity ECM
+ */
+
+body.UNKNOWN
+{
+   background-color: #2d88e0;
+}
+
+.UNKNOWN .login .product-name
+{
+  color: #2d88e0;
+}
+
+.UNKNOWN .login input[type="text"], .login input[type="password"]
+{
+  border-bottom: 1px solid #b2c5ec;
+}
+
+.UNKNOWN .login input[type="text"]:focus, .UNKNOWN .login input[type="password"]:focus
+{
+   border-bottom: 1px solid #2d88e0;
+}
+
+.UNKNOWN .login input[type="text"]:focus, .UNKNOWN .login input[type="text"]:focus
+{
+   border-bottom: 1px solid #2d88e0;
+}
+
+.UNKNOWN .form-fields.login .form-field > span.yui-button
+{
+   border-color: #2d88e0;
+}
+
+.UNKNOWN .form-fields.login .form-field > span.yui-button > .first-child
+{
+  background-color: #2d88e0;
+  border-color: #007AFF;
+}
+
+.UNKNOWN.alfresco-guest .theme-overlay {
+    border: 1px solid #007AFF;
+    background-color: #fff;   
+}
+
+.UNKNOWN .login-copy A {
+  color: #fff;
+  text-decoration: underline;
 }
