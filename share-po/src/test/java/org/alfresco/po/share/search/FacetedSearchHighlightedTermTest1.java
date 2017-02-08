@@ -28,6 +28,7 @@ import org.alfresco.po.share.SharePage;
 import org.alfresco.po.share.search.FacetedSearchScopeMenu.ScopeMenuSelectedItemsMenu;
 import org.alfresco.po.share.site.document.ContentDetails;
 import org.alfresco.po.share.site.document.ContentType;
+import org.alfresco.po.share.steps.CommonActions;
 import org.alfresco.test.FailedTestListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,15 +38,17 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Integration test to verify that highlight is working on Search Results page.
  *
  * @author CorinaZ
  */
-
 @Listeners(FailedTestListener.class)
+@Test(groups = { "alfresco-one" })
 public class FacetedSearchHighlightedTermTest1 extends AbstractTest
 {
     private static Log logger = LogFactory.getLog(LiveSearchDropdownTest.class);
@@ -53,19 +56,16 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     protected String fileName;
     protected String folderName;
     protected SharePage sharepage;
-    private DashBoardPage dashBoard;
-
-    private AdvanceSearchPage contentSearchPage;
 
     @BeforeClass(groups = { "alfresco-one" })
     public void prepare() throws Exception
     {
         try
         {
-            dashBoard = loginAs(username, password);
+            loginAs(username, password);
 
             // create one file to the repository with the same name, title, description and content
-            siteName = "mycontent-"  + System.currentTimeMillis();
+            siteName = "mycontent-" + System.currentTimeMillis();
             fileName = "mycontent" + System.currentTimeMillis();
             folderName = "mycontentf" + System.currentTimeMillis();
 
@@ -80,11 +80,13 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
 
             // create one file in the folder with the same name, title, description and content
             siteActions.navigateToFolder(driver, folderName);
+
             ContentDetails contentDetails1 = new ContentDetails();
             contentDetails1.setName(fileName);
             contentDetails1.setTitle(fileName);
             contentDetails1.setDescription(fileName);
             contentDetails1.setContent(fileName);
+
             siteActions.createContent(driver, contentDetails1, ContentType.PLAINTEXT);
 
         }
@@ -111,8 +113,9 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     public void testHighlightedSearchFileByName() throws Exception
     {
         Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, fileName, fileName, true, 3));
-        siteActions.getFacetedSearchResult(driver, fileName);
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true), "Highlighting results do not match");
+        
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true),
+                "Highlighting results do not match");
 
     }
 
@@ -123,43 +126,35 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 2)
     public void testHighlightedSearchFileByNameAdvancedSearch() throws Exception
     {
-        // TODO: Ideally create a simple utility for advancedSearch and also search with retry as it could be inconsistent due to indexing issue
-        contentSearchPage = dashBoard.getNav().selectAdvanceSearch().render();
-        contentSearchPage.inputName(fileName);
-        FacetedSearchPage resultPage = contentSearchPage.clickSearch().render();
+        Map<String, String> searchInfo = new HashMap<>();
+        {
+            searchInfo.put(SearchKeys.NAME.getSearchKeys(), fileName);
+        }
 
-        // TODO: Replace with utility checkSearchResultHighlighting
-        Assert.assertTrue(resultPage.hasResults());
+        Assert.assertTrue(siteActions.checkAdvancedSearchResultsWithRetry(driver, fileName, CommonActions.SelectItem.CONTENT, searchInfo, true, 3));
 
-        FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResultByName(fileName);
-        Assert.assertTrue(resultItem.isItemHighlighted(ItemHighlighted.NAME));
-        Assert.assertEquals(resultItem.getHighlightedText(ItemHighlighted.NAME), fileName);
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true),
+                "Highlighting results do not match");
+
     }
 
     /**
      * Searching folder by name, the result is highlighted
-     * Search is performed from Live Search
+     * Search is performed from Advanced Search
      */
     @Test(groups = { "alfresco-one" }, priority = 3)
-    public void testHighlightedSearchFolderByName() throws Exception
+    public void testHighlightedSearchFolderByNameAdvancedSearch() throws Exception
     {
-        String SEARCH_TERM = "mycontentf";
-        
-     // TODO: Replace with utility checkSearchResultsWithRetry, checkSearchResultHighlighting        
-        
-//        SearchBox search = dashBoard.getSearch();
-//
-//        FacetedSearchPage resultPage = search.search(SEARCH_TERM).render();
-//        Assert.assertTrue(resultPage.hasResults());
-//
-//        FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResultByName(folderName);
-//        Assert.assertTrue(resultItem.isItemHighlighted(ItemHighlighted.NAME));
-//        Assert.assertEquals(resultItem.getHighlightedText(ItemHighlighted.NAME), SEARCH_TERM);
-        
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, SEARCH_TERM, folderName, true, 3));
-        
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, folderName, ItemHighlighted.NAME, SEARCH_TERM, true), "Highlighting results do not match");
-        
+        Map<String, String> searchInfo = new HashMap<>();
+        {
+            searchInfo.put(SearchKeys.NAME.getSearchKeys(), folderName);
+        }
+
+        Assert.assertTrue(siteActions.checkAdvancedSearchResultsWithRetry(driver, folderName, CommonActions.SelectItem.FOLDER, searchInfo, true, 3));
+
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, folderName, ItemHighlighted.NAME, folderName, true),
+                "Highlighting results do not match");
+
     }
 
     /**
@@ -167,11 +162,17 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
      * Search is performed from Advanced Search
      */
     @Test(groups = { "alfresco-one" }, priority = 4)
-    public void testHighlightedSearchFileByTitle() throws Exception
+    public void testHighlightedSearchFileByTitleAdvancedSearch() throws Exception
     {
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, fileName, fileName, true, 3));
+        Map<String, String> searchInfo = new HashMap<>();
+        {
+            searchInfo.put(SearchKeys.TITLE.getSearchKeys(), fileName);
+        }
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.TITLE, fileName, true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkAdvancedSearchResultsWithRetry(driver, fileName, CommonActions.SelectItem.CONTENT, searchInfo, true, 3));
+
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.TITLE, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -179,16 +180,17 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
      * Search is performed from Advanced Search
      */
     @Test(groups = { "alfresco-one" }, priority = 5)
-    public void testHighlightedSearchFolderByTitle() throws Exception
+    public void testHighlightedSearchFolderByTitleAdvancedSearch() throws Exception
     {
-        contentSearchPage = dashBoard.getNav().selectAdvanceSearch().render();
-        contentSearchPage.searchLink("Folders").render();
-        contentSearchPage.inputTitle(folderName);
-        SearchResultPage resultPage = contentSearchPage.clickSearch().render();
-        Assert.assertTrue(resultPage.hasResults());
+        Map<String, String> searchInfo = new HashMap<>();
+        {
+            searchInfo.put(SearchKeys.TITLE.getSearchKeys(), folderName);
+        }
 
-        FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResults().get(0);
-        Assert.assertTrue(resultItem.isItemHighlighted(ItemHighlighted.TITLE));
+        Assert.assertTrue(siteActions.checkAdvancedSearchResultsWithRetry(driver, folderName, CommonActions.SelectItem.FOLDER, searchInfo, true, 3));
+
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, folderName, ItemHighlighted.TITLE, folderName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -200,7 +202,8 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     {
         Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, fileName, fileName, true, 3));
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.DESCRIPTION, fileName, true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.DESCRIPTION, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -210,32 +213,35 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 7)
     public void testHighlightedSearchFileByDescriptionAdvancedSearch() throws Exception
     {
-        contentSearchPage = dashBoard.getNav().selectAdvanceSearch().render();
-        contentSearchPage.inputTitle(fileName);
-        FacetedSearchPage resultPage = contentSearchPage.clickSearch().render();
+        Map<String, String> searchInfo = new HashMap<>();
+        {
+            searchInfo.put(SearchKeys.DESCRIPTION.getSearchKeys(), fileName);
+        }
 
-        // TODO: Replace with utility checkSearchResultHighlighting   
-        Assert.assertTrue(resultPage.hasResults());
+        Assert.assertTrue(siteActions.checkAdvancedSearchResultsWithRetry(driver, fileName, CommonActions.SelectItem.CONTENT, searchInfo, true, 3));
 
-        FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResultByName(fileName);
-        Assert.assertTrue(resultItem.isItemHighlighted(ItemHighlighted.DESCRIPTION));
-        Assert.assertEquals(resultItem.getHighlightedText(ItemHighlighted.DESCRIPTION), fileName);
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.DESCRIPTION, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
      * Searching file by description, the result is highlighted
-     * Search is performed from Live Search
+     * Search is performed from Advanced Search
      */
     @Test(groups = { "alfresco-one" }, priority = 8)
-    public void testHighlightedSearchFolderByDescription() throws Exception
+    public void testHighlightedSearchFolderByDescriptionAdvancedSearch() throws Exception
     {
-     // TODO: Replace with utility checkSearchResultsWithRetry, checkSearchResultHighlighting  
-        SearchBox search = dashBoard.getSearch();
-        FacetedSearchPage resultPage = search.search(folderName).render();
-        Assert.assertTrue(resultPage.hasResults());
 
-        FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResultByName(folderName);
-        Assert.assertTrue(resultItem.isItemHighlighted(ItemHighlighted.DESCRIPTION));
+        Map<String, String> searchInfo = new HashMap<>();
+        {
+            searchInfo.put(SearchKeys.DESCRIPTION.getSearchKeys(), folderName);
+        }
+
+        Assert.assertTrue(siteActions.checkAdvancedSearchResultsWithRetry(driver, folderName, CommonActions.SelectItem.FOLDER, searchInfo, true, 3));
+
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, folderName, ItemHighlighted.DESCRIPTION, folderName, true),
+                "Highlighting results do not match");
+
     }
 
     /**
@@ -243,18 +249,16 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
      * Search is performed from Advanced Search
      */
     @Test(groups = { "alfresco-one" }, priority = 9)
-    public void testHighlightedSearchFileByContent() throws Exception
+    public void testHighlightedSearchFileByContentAdvancedSearch() throws Exception
     {
-        contentSearchPage = dashBoard.getNav().selectAdvanceSearch().render();
-        contentSearchPage.inputKeyword(fileName);
-        FacetedSearchPage resultPage = contentSearchPage.clickSearch().render();
+        Map<String, String> searchInfo = new HashMap<>();
+        {
+            searchInfo.put(SearchKeys.KEYWORD.getSearchKeys(), fileName);
+        }
 
-        // TODO: Replace with utility checkSearchResultHighlighting          
-        Assert.assertTrue(resultPage.hasResults());
-
-        FacetedSearchResult resultItem = (FacetedSearchResult) resultPage.getResultByName(fileName);
-        Assert.assertTrue(resultItem.isItemHighlighted(ItemHighlighted.CONTENT));
-        Assert.assertEquals(resultItem.getHighlightedText(ItemHighlighted.CONTENT), fileName);
+        Assert.assertTrue(siteActions.checkAdvancedSearchResultsWithRetry(driver, fileName, CommonActions.SelectItem.CONTENT, searchInfo, true, 3));
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.CONTENT, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -265,9 +269,11 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     public void testHighlightedSearchByPropertyName() throws Exception
     {
         String SEARCH_TERM = "mycontent";
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "name:"+SEARCH_TERM, fileName, true, 3));
+        
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "name:" + SEARCH_TERM, fileName, true, 3));
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, SEARCH_TERM, true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, SEARCH_TERM, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -277,9 +283,10 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 11)
     public void testHighlightedSearchByPropertyTitle() throws Exception
     {
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "title:"+fileName, fileName, true, 3));
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "title:" + fileName, fileName, true, 3));
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.TITLE, fileName, true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.TITLE, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -289,9 +296,10 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 12)
     public void testHighlightedSearchByPropertyDescription() throws Exception
     {
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "title:"+fileName, fileName, true, 3));
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "title:" + fileName, fileName, true, 3));
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.DESCRIPTION, fileName, true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.DESCRIPTION, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -303,8 +311,8 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     {
         Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "content:" + fileName, fileName, true, 3));
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.CONTENT, fileName,
-                        true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.CONTENT, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -314,9 +322,10 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 14)
     public void testHighlightedSearchByPropertyCm_Name() throws Exception
     {
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "cm_name:"+fileName, fileName, true, 3));
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "cm_name:" + fileName, fileName, true, 3));
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true),
+                "Highlighting results do not match");
     }
 
     /**
@@ -326,9 +335,10 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 15)
     public void testHighlightedSearchByPropertyTEXT() throws Exception
     {
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "TEXT:"+fileName, fileName, true, 3));
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "TEXT:" + fileName, fileName, true, 3));
 
-        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true), "Highlighting results do not match");
+        Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true),
+                "Highlighting results do not match");
 
     }
 
@@ -354,7 +364,7 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 17)
     public void testHighlightedSearchByWildcardsEqual() throws Exception
     {
-        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "="+fileName, fileName, true, 3));
+        Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "=" + fileName, fileName, true, 3));
 
         Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.NAME, fileName, true), "Highlighting results do not match");
         Assert.assertTrue(siteActions.checkSearchResultHighlighting(driver, fileName, ItemHighlighted.TITLE, fileName, true), "Highlighting results do not match");
@@ -388,9 +398,9 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     public void testItemsNotHighlighted() throws Exception
     {
         Assert.assertTrue(siteActions.checkSearchResultsWithRetry(driver, "mycontent", fileName, true, 3));
-        
+
         FacetedSearchResult resultItem = siteActions.getFacetedSearchResult(driver, fileName);
-        
+
         Assert.assertFalse(resultItem.isSiteHighlighted());
         Assert.assertFalse(resultItem.isLocationHighlighted());
         Assert.assertFalse(resultItem.isUserNameHighlighted());
@@ -404,8 +414,8 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     public void testNoItemIsHighlightedSearchByCreatedProperty() throws Exception
     {
         siteActions.navigateToDocumentLibrary(driver, siteName).render();
-        
-        FacetedSearchPage resultPage = siteActions.search(driver, "created:today").render(); 
+
+        FacetedSearchPage resultPage = siteActions.search(driver, "created:today").render();
 
         Assert.assertTrue(resultPage.hasResults());
 
@@ -426,7 +436,7 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     {
         siteActions.navigateToDocumentLibrary(driver, siteName).render();
 
-        FacetedSearchPage resultPage = siteActions.search(driver, "*").render();    
+        FacetedSearchPage resultPage = siteActions.search(driver, "*").render();
 
         // Select Scope = SITE
         resultPage = resultPage.selectSearchScope(ScopeMenuSelectedItemsMenu.SPECIFIC_SITE).render();
@@ -447,15 +457,15 @@ public class FacetedSearchHighlightedTermTest1 extends AbstractTest
     @Test(groups = { "alfresco-one" }, priority = 22)
     public void testGalleryViewIsNotHighlighted() throws Exception
     {
-       siteActions.navigateToDocumentLibrary(driver, siteName).render();
+        siteActions.navigateToDocumentLibrary(driver, siteName).render();
 
         FacetedSearchPage resultPage = siteActions.search(driver, "mycontent").render();
         Assert.assertTrue(resultPage.hasResults());
 
         resultPage = resultPage.getView().selectViewByLabel("Gallery View").render();
         Assert.assertFalse(resultPage.getView().isAnyItemHighlightedGalleryView(), "Test failed when item is highlighted - no item should be highlighted!!");
-        
+
         resultPage = resultPage.getView().selectViewByLabel("Detailed View").render();
-        Assert.assertFalse(resultPage.getView().isAnyItemHighlightedGalleryView(), "Test failed when item is highlighted - no item should be highlighted!!");
+        Assert.assertTrue(resultPage.hasResults());
     }
 }
