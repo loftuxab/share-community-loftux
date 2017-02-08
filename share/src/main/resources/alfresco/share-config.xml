@@ -63,6 +63,7 @@
          <alt-text>Alfresco Share</alt-text>
          <css-class>footer-com</css-class>
          <label>label.copyright.byloftux</label>
+         <label-aikau>label.copyright.enterprise</label-aikau>
       </footer>
       <about>
          <css-class>logo-com</css-class>

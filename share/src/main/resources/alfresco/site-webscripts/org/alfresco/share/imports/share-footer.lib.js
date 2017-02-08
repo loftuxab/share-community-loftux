@@ -1,6 +1,6 @@
 var licenseHolder = context.properties["editionInfo"].holder,
     footerConfig = config.scoped["Edition"]["footer"],
-    footerCopyRight = footerConfig.getChildValue("label"),
+    footerCopyRight = footerConfig.getChildValue("label-aikau"),
     footerCssClass = footerConfig.getChildValue("css-class"),
     footerLogo = footerConfig.getChildValue("logo"),
     footerLogoAltText = footerConfig.getChildValue("alt-text");
