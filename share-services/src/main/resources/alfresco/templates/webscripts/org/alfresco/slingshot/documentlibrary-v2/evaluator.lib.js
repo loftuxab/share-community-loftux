@@ -66,7 +66,9 @@ var Evaluator =
                      var wcNode = wcLink[0];
                      workingCopy["isWorkingCopy"] = true;
                      workingCopy["sourceNodeRef"] = wcNode.nodeRef;
-                     if (wcNode.hasAspect("{http://www.alfresco.org/model/content/1.0}versionable"))
+                     // Check first that user has read permission for wcNode, may not be the case if checked out document has been moved between sites.
+                     // If not checked the whole listing can fail.
+                     if (wcNode.hasPermission("Read") && wcNode.hasAspect("{http://www.alfresco.org/model/content/1.0}versionable"))
                      {
                         workingCopy["workingCopyVersion"] = wcNode.properties["cm:versionLabel"];
                      }
