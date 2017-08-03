@@ -790,7 +790,7 @@
          }
          else
          {
-            elCell.innerHTML += '<span class="thumbnail">' + (thumbnail.isLink ? '<span class="link"></span>' : '') + 
+            elCell.innerHTML += '<span class="alf-gallery-item-thumbnail">' + (thumbnail.isLink ? '<span class="link"></span>' : '') + 
                   Alfresco.DocumentList.generateFileFolderLinkMarkup(scope, record) + thumbnail.html + '</a></span>';
          }
          var thumbnailElement = document.getElementById(thumbnail.id);

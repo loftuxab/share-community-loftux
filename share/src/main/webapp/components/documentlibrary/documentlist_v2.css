@@ -987,11 +987,13 @@ body .doclist tr.yui-dt-highlighted
 
 .doclist .alf-gallery span.folder
 {
-   height: 100%;
+   height: 99%;
+   width: 99%;
 }
 
 .alf-gallery-item .alf-gallery-item-thumbnail
 {
+   height: 100%;
    border: none;
    overflow: hidden;
    position: relative;
