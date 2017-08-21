@@ -327,8 +327,8 @@
                 <configuration>
                     <addJavaLicenseAfterPackage>false</addJavaLicenseAfterPackage>
                     <organizationName>Alfresco Software Limited</organizationName>
-                    <failOnMissingHeader>true</failOnMissingHeader>
-                    <failOnNotUptodateHeader>true</failOnNotUptodateHeader>
+                    <failOnMissingHeader>false</failOnMissingHeader>
+                    <failOnNotUptodateHeader>false</failOnNotUptodateHeader>
                     <licenseResolver>classpath://alfresco</licenseResolver>
                     <licenseName>community</licenseName>
                     <includes>

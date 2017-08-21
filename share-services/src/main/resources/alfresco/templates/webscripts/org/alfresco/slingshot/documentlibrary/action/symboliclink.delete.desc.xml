@@ -1,0 +1,10 @@
+<webscript>
+   <shortname>file</shortname>
+   <description>Document List Action - Delete Symbolic Link. Extension by Loftux AB</description>
+   <url>/slingshot/doclib/action/symboliclink/site/{site}/{container}</url>
+   <url>/slingshot/doclib/action/symboliclink/site/{site}/{container}/{path}</url>
+   <format default="json">argument</format>
+   <authentication>user</authentication>
+   <transaction>required</transaction>
+   <lifecycle>internal</lifecycle>
+</webscript>

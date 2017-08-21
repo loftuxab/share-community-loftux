@@ -16,7 +16,8 @@ function getDoclist()
    }
 
    parsedArgs.pathNode = ParseArgs.resolveNode(parsedArgs.nodeRef);
-   parsedArgs.location = Common.getLocation(parsedArgs.pathNode, parsedArgs.libraryRoot);
+   // Loftux - location is actually parsed in getParsedArgs above, this one resets linked location
+   //parsedArgs.location = Common.getLocation(parsedArgs.pathNode, parsedArgs.libraryRoot);
 
    var favourites = Common.getFavourites(),
       node = parsedArgs.pathNode;

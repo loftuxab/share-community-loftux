@@ -1,0 +1,195 @@
+<extension>
+    <modules>
+        <module>
+            <id>Loftux Symbolic Linking</id>
+            <auto-deploy>false</auto-deploy>
+            <version>1.0.0</version>
+            <configurations>
+                <config evaluator="string-compare" condition="DocLibCustom">
+                    <dependencies>
+                        <js src="components/documentlibrary/loftux-symboliclink.js" />
+                        <css src="/components/documentlibrary/loftux-symboliclink.css" />
+                    </dependencies>
+                </config>
+                <config evaluator="string-compare" condition="DocumentLibrary">
+
+                    <metadata-templates>
+                        <!-- Default (fallback) -->
+                        <template id="default">
+                            <line index="05" id="isSymbolicLinked" evaluator="evaluator.isSymbolicLinked" view="detailed">{symbolicLinkBanner}</line>
+                        </template>
+                    </metadata-templates>
+
+                    <indicators>
+                        <indicator id="isSymbolicLinked" index="10">
+                            <evaluator>evaluator.isSymbolicLinkedAndNotPrimary</evaluator>
+                        </indicator>
+                        <indicator id="isSymbolicLinkedPrimary" index="10">
+                            <evaluator>evaluator.isSymbolicLinkedPrimary</evaluator>
+                        </indicator>
+                    </indicators>
+
+                </config>
+                <config evaluator="string-compare" condition="DocLibActions">
+
+                    <!-- Action definitions -->
+                    <actions>
+
+                        <!-- LOFTUX Below actions redifend to take into account if object is symbolic linked -->
+                        <!-- Copy to -->
+                        <action id="document-copy-to" type="javascript" label="actions.document.copy-to">
+                            <param name="function">onActionCopyTo</param>
+                            <evaluator>evaluator.doclib.action.editableByCurrentUser</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <!-- Move to -->
+                        <action id="document-move-to" type="javascript" label="actions.document.move-to">
+                            <param name="function">onActionMoveTo</param>
+                            <permissions>
+                                <permission allow="true">Delete</permission>
+                            </permissions>
+                            <evaluator>evaluator.doclib.action.editableByCurrentUser</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <!-- Delete -->
+                        <action id="document-delete" type="javascript" label="actions.document.delete">
+                            <param name="function">onActionDelete</param>
+                            <permissions>
+                                <permission allow="true">Delete</permission>
+                            </permissions>
+                            <evaluator>evaluator.doclib.action.editableByCurrentUser</evaluator>
+                            <evaluator>evaluator.doclib.action.isNotPartOfHybridWorklfow</evaluator>
+                            <evaluator>evaluator.doclib.action.isDeletable</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <!-- Upload new version -->
+                        <action id="document-upload-new-version" type="javascript" label="actions.document.upload-new-version">
+                            <param name="function">onActionUploadNewVersion</param>
+                            <permissions>
+                                <permission allow="true">Write</permission>
+                            </permissions>
+                            <evaluator>evaluator.doclib.action.upload</evaluator>
+                            <evaluator>evaluator.doclib.action.editableByCurrentUser</evaluator>
+                            <evaluator negate="true">evaluator.doclib.metadata.isLocked</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <!-- Inline edit -->
+                        <action id="document-inline-edit" type="pagelink" label="actions.document.inline-edit">
+                            <param name="page">inline-edit?nodeRef={node.nodeRef}</param>
+                            <permissions>
+                                <permission allow="true">Write</permission>
+                            </permissions>
+                            <!-- aspect check (app:inlineeditable), mimetype check (text/plain, text/html, text/xml) -->
+                            <evaluator>evaluator.doclib.action.inlineEdit</evaluator>
+                            <evaluator>evaluator.doclib.action.editableByCurrentUser</evaluator>
+                            <evaluator negate="true">evaluator.doclib.action.isLocked</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <!-- Edit online -->
+                        <action id="document-edit-online" type="javascript" label="actions.document.edit-online">
+                            <param name="function">onActionEditOnline</param>
+                            <permissions>
+                                <permission allow="true">Write</permission>
+                            </permissions>
+                            <!-- vti module check, mimetype check, userAgent check -->
+                            <evaluator>evaluator.doclib.action.onlineEdit</evaluator>
+                            <evaluator>evaluator.doclib.action.editableByCurrentUser</evaluator>
+                            <evaluator negate="true">evaluator.doclib.action.isLocked</evaluator>
+                            <evaluator negate="true">evaluator.doclib.action.isAosOnlineEditAvailable</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <!-- Edit online AOS -->
+                        <action id="document-edit-online-aos" type="javascript" label="actions.document.edit-online" icon="document-edit-online">
+                            <param name="function">onActionEditOnlineAos</param>
+                            <permissions>
+                                <permission allow="true">Write</permission>
+                            </permissions>
+                            <evaluator>evaluator.doclib.action.isAosOnlineEditAvailable</evaluator>
+                            <evaluator>evaluator.doclib.action.notEditBrowser</evaluator>
+                            <evaluator negate="true">evaluator.doclib.action.isLockedForAos</evaluator>
+                            <evaluator>evaluator.doclib.action.isMimetypeEditableAos</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <!-- Edit offline -->
+                        <action id="document-edit-offline" type="javascript" label="actions.document.edit-offline">
+                            <param name="function">onActionEditOffline</param>
+                            <permissions>
+                                <permission allow="true">Write</permission>
+                            </permissions>
+                            <!-- vti module check, mimetype check, userAgent check -->
+                            <evaluator>evaluator.doclib.action.offlineEdit</evaluator>
+                            <evaluator>evaluator.doclib.action.hasContent</evaluator>
+                            <evaluator negate="true">evaluator.doclib.action.notEditable</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <action id="document-link-to" type="javascript" label="actions.document.link-to">
+                            <param name="function">onActionLinkTo</param>
+                            <evaluator negate="true">evaluator.doclib.action.isLocked</evaluator>
+                            <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                        </action>
+
+                        <action id="document-link-list" type="javascript" label="actions.document.link-list">
+                            <param name="function">onActionLinkList</param>
+                            <evaluator>evaluator.isSymbolicLinked</evaluator>
+                        </action>
+                        <action id="document-link-delete" type="javascript" label="actions.document.link-delete">
+                            <param name="function">onActionLinkDelete</param>
+                            <permissions>
+                                <permission allow="true">Delete</permission>
+                            </permissions>
+                            <evaluator negate="true">evaluator.doclib.action.isLocked</evaluator>
+                            <evaluator>evaluator.isSymbolicLinkedAndNotPrimary</evaluator>
+                        </action>
+
+                    </actions>
+
+                    <!-- Action Group definitions -->
+                    <actionGroups>
+                        <actionGroup id="document-browse">
+                            <action index="261" id="document-link-to" appendEvaluators="true">
+                                <evaluator>evaluator.doclib.action.DocumentEnableInSmartFolder</evaluator>
+                            </action>
+                            <action index="262" id="document-link-list" appendEvaluators="true">
+                                <evaluator>evaluator.doclib.action.DocumentEnableInSmartFolder</evaluator>
+                            </action>
+                            <action index="263" id="document-link-delete"  appendEvaluators="true">
+                                <evaluator>evaluator.doclib.action.DocumentEnableInSmartFolder</evaluator>
+                            </action>
+                        </actionGroup>
+
+                        <actionGroup id="folder-browse">
+                            <action index="161" id="document-link-to" label="actions.folder.link-to"  appendEvaluators="true">
+                                <evaluator>evaluator.doclib.action.DocumentEnableInSmartFolder</evaluator>
+                            </action>
+                            <action index="162" id="document-link-list"  appendEvaluators="true">
+                                <evaluator>evaluator.doclib.action.DocumentEnableInSmartFolder</evaluator>
+                            </action>
+                            <action index="163" id="document-link-delete"  appendEvaluators="true">
+                                <evaluator>evaluator.doclib.action.DocumentEnableInSmartFolder</evaluator>
+                            </action>
+                        </actionGroup>
+
+                    </actionGroups>
+                </config>
+            </configurations>
+            <customizations>
+                <customization>
+                    <targetPackageRoot>org.alfresco.modules</targetPackageRoot>
+                    <sourcePackageRoot>se.loftux.extension.symboliclink.modules</sourcePackageRoot>
+                </customization>
+                <customization>
+                    <targetPackageRoot>org.alfresco.components</targetPackageRoot>
+                    <sourcePackageRoot>se.loftux.extension.symboliclink.components</sourcePackageRoot>
+                </customization>
+            </customizations>
+        </module>
+    </modules>
+</extension>

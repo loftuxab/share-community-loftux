@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id="loftuxSymboliclinkResourceBundle" class="org.springframework.extensions.surf.util.ResourceBundleBootstrapComponent">
+		<property name="resourceBundles">
+			<list>
+				<value>alfresco.messages.symboliclinking</value>
+			</list>
+		</property>
+	</bean>
+
+   <bean id="evaluator.isSymbolicLinked" class="org.alfresco.web.evaluator.IsSymbolicLinked" />
+   <bean id="evaluator.isNotSymbolicLinked" class="org.alfresco.web.evaluator.IsSymbolicLinked" >
+      <property name="negateOutput" value="true" />
+   </bean>
+   <bean id="evaluator.isSymbolicLinkedPrimary" class="org.alfresco.web.evaluator.IsSymbolicLinked" >
+      <property name="evaluatePrimary" value="true" />
+   </bean>
+   <bean id="evaluator.isSymbolicLinkedNotPrimary" class="org.alfresco.web.evaluator.IsSymbolicLinked" >
+      <property name="evaluatePrimary" value="true" />
+      <property name="negateOutput" value="true" />
+   </bean>
+   <bean id="evaluator.isSymbolicLinkedAndPrimary" parent="evaluator.doclib.action.chainedMatchAll">
+      <property name="evaluators">
+         <list>
+            <ref bean="evaluator.isSymbolicLinked" />
+            <ref bean="evaluator.isSymbolicLinkedPrimary" />
+         </list>
+      </property>
+   </bean>
+   <bean id="evaluator.isNotSymbolicLinkedOrPrimary" parent="evaluator.doclib.action.chainedMatchOne">
+      <property name="evaluators">
+         <list>
+            <ref bean="evaluator.isNotSymbolicLinked" />
+            <ref bean="evaluator.isSymbolicLinkedPrimary" />
+         </list>
+      </property>
+   </bean>
+   <bean id="evaluator.isSymbolicLinkedAndNotPrimary" parent="evaluator.doclib.action.chainedMatchAll">
+      <property name="evaluators">
+         <list>
+            <ref bean="evaluator.isSymbolicLinked" />
+            <ref bean="evaluator.isSymbolicLinkedNotPrimary" />
+         </list>
+      </property>
+   </bean>
+
+</beans>

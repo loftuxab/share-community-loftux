@@ -176,7 +176,18 @@ var AlfrescoUtil =
    {
       if (nodeRef)
       {
-         var url = '/slingshot/doclib2/node/' + nodeRef.replace('://', '/');
+         var url = '/slingshot/doclib2/';
+         // Loftux change to support parsing of linked files
+         if(site)
+         {
+            url += 'site/'+ site + '/node/';
+         }
+         else
+         {
+            url += 'node/';
+         }
+         url += nodeRef.replace('://', '/');
+         // Loftux change end
          return AlfrescoUtil.processNodeDetails(url, site, options, libraryRoot);
       }
       return null;
@@ -717,7 +728,7 @@ var AlfrescoUtil =
 
       /**
        * Gets ["CommonComponentStyle"]["component-style"] configuration value from share-document-library-config.xml.
-       * 
+       *
        * @returns ["CommonComponentStyle"]["component-style"] configuration value, or null it the configuration is not present.
        */
       getCommonConfigStyle : function getCommonConfigStyle()
@@ -734,7 +745,7 @@ var AlfrescoUtil =
 
    /**
     * Gets ["SuppressComponent"]["component-config"] configuration value from share-document-library-config.xml.
-    * 
+    *
     * @returns ["SuppressComponent"]["component-config"] configuration value from share-document-library-config.xml, or null it the configuration is not present.
     */
    getSupressConfig : function getSupressConfig()
@@ -751,8 +762,8 @@ var AlfrescoUtil =
 
    /**
     * Gets icon resource path string specified in the {component.style} configuration for specified by {iconSize} attribute.
-    * See ["CommonComponentStyle"]["component-config"] configuration from share-document-library-config.xml. As an example for {browse.folder} component configuration 
-    * and for {iconSize} "32x32" the result will be "components/documentlibrary/images/smart-folder-32.png" 
+    * See ["CommonComponentStyle"]["component-config"] configuration from share-document-library-config.xml. As an example for {browse.folder} component configuration
+    * and for {iconSize} "32x32" the result will be "components/documentlibrary/images/smart-folder-32.png"
     * @param component
     * @param iconSize
     */
@@ -765,10 +776,10 @@ var AlfrescoUtil =
     * Gets icon resource path string specified in the style configuration that corresponds
     * with matching filter (["CommonComponentStyle"]["component-config"] configuration from share-document-library-config.xml),
     * or {defaultValue} parameter if there are no matching filters.
-    * 
+    *
     * @param node {object}
     * @param commonComponentConfig {object}
-    * @param defaultValue {String}- default icon resource path string or default style 
+    * @param defaultValue {String}- default icon resource path string or default style
     * @param iconSize {String} - (values of form: "16x16", "32x32"..)
     * @returns icon resource path string or resource style specified in the style configuration that corresponds
     *    with matching filter, or defaultValue specified if there are no matching filters.
@@ -798,9 +809,9 @@ var AlfrescoUtil =
    },
 
    /**
-    * Aspect filter implementation. Returns true if the node attribute has all the aspects enumerated in {filter.match} 
+    * Aspect filter implementation. Returns true if the node attribute has all the aspects enumerated in {filter.match}
     * from ["CommonComponentStyle"]["component-style"] or ["SuppressComponent"]["component-config"] configurations from share-document-library-config.xml.
-    * 
+    *
     * @param node {object}
     * @param filter {object}
     * @returns {Boolean} - true if the node attribute has all the aspects enumerated in filter.match, false otherwise.
@@ -828,7 +839,7 @@ var AlfrescoUtil =
    },
 
    /**
-    * Returns true if filterType is accepted, false otherwise. Currently only aspect filters accepted. 
+    * Returns true if filterType is accepted, false otherwise. Currently only aspect filters accepted.
     * @param filterType
     * @returns {Boolean} - true if filterType is accepted, false otherwise.
     */
@@ -853,15 +864,15 @@ var AlfrescoUtil =
    },
 
    /**
-    * Gets icon resource path string specified in the {style} configuration that corresponds with matching filter, 
+    * Gets icon resource path string specified in the {style} configuration that corresponds with matching filter,
     * of {defaultIcon} if there are no matching filters.
-    * 
+    *
     * @param node {object}
     * @param commonComponentConfig {object} - common component configuration from share-documentlibrary-config.xml
     * @param defaultIcon {String} - default resource icon path string
     * @param iconSize {String} - (values of form: "16x16", "32x32"..)
-    * 
-    * @returns icon resource path string specified in the {style} configuration that corresponds with matching filter, 
+    *
+    * @returns icon resource path string specified in the {style} configuration that corresponds with matching filter,
     * of {defaultIcon} if there are no matching filters.
     */
    getResourceIcon : function getResourceIcon(node, commonComponentConfig, defaultIcon, iconSize)
@@ -886,9 +897,9 @@ var AlfrescoUtil =
 
    /**
     * Gets true if any of {supressConfig} filters are matching, or false otherwise.
-    * 
+    *
     * This function is used for suppressing Social components {favorites, likes and comments}, Tags, Date. Currently only used for folders in Smart Folders context.
-    * 
+    *
     * @returns {Boolean} - true if any of {supressConfig} filters are matching, or false otherwise.
     */
    isComponentSuppressed : function isComponentSuppressed(node, supressConfig)

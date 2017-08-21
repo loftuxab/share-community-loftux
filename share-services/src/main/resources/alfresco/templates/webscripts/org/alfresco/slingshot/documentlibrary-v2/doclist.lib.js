@@ -35,7 +35,7 @@ function doclist_getAllNodes(parsedArgs, filterParams, query, totalItemCount)
       if (parentNode !== null)
       {
          var skip = -1,
-             max = -1;
+            max = -1;
 
          if (args.size != null)
          {
@@ -48,7 +48,7 @@ function doclist_getAllNodes(parsedArgs, filterParams, query, totalItemCount)
          }
 
          var sortField = (args.sortField == null ? "cm:name" : args.sortField),
-             sortAsc = (((args.sortAsc == null) || (args.sortAsc == "true")) ? true : false);
+            sortAsc = (((args.sortAsc == null) || (args.sortAsc == "true")) ? true : false);
 
          // Get paged set
          requestTotalCountMax = skip + REQUEST_MAX;
@@ -67,17 +67,17 @@ function doclist_getAllNodes(parsedArgs, filterParams, query, totalItemCount)
       if (query !== "")
       {
          allNodes = search.query(
-         {
-            query: query,
-            language: filterParams.language,
-            page:
             {
-               maxItems: totalItemCount
-            },
-            sort: filterParams.sort,
-            templates: filterParams.templates,
-            namespace: (filterParams.namespace ? filterParams.namespace : null)
-         });
+               query: query,
+               language: filterParams.language,
+               page:
+               {
+                  maxItems: totalItemCount
+               },
+               sort: filterParams.sort,
+               templates: filterParams.templates,
+               namespace: (filterParams.namespace ? filterParams.namespace : null)
+            });
 
          totalRecords = allNodes.length;
       }
@@ -115,15 +115,15 @@ function doclist_main()
       paged = false,
       favourites = Common.getFavourites(),
       filterParams = Filters.getFilterParams(filter, parsedArgs,
-      {
-         favourites: favourites
-      }),
+         {
+            favourites: favourites
+         }),
       query = filterParams.query,
       allSites = (parsedArgs.nodeRef == "alfresco://sites/home");
-   
+
    if (logger.isLoggingEnabled())
       logger.log("doclist.lib.js - NodeRef: " + parsedArgs.nodeRef + " Query: " + query);
-   
+
    var totalItemCount = filterParams.limitResults ? parseInt(filterParams.limitResults, 10) : -1;
    // For all sites documentLibrary query we pull in all available results and post filter
    if (totalItemCount === 0) totalItemCount = -1;
@@ -151,11 +151,11 @@ function doclist_main()
       if (logger.isLoggingEnabled())
          logger.log("doclist.lib.js - will match results using regex: " + pathMatch);
    }
-   
+
    // Ensure folders and folderlinks appear at the top of the list
    var folderNodes = [],
       documentNodes = [];
-   
+
    for each (node in allNodes)
    {
       if (totalItemCount !== 0)
@@ -181,12 +181,12 @@ function doclist_main()
          }
       } else break;
    }
-   
+
    // Node type counts
    var folderNodesCount = folderNodes.length,
       documentNodesCount = documentNodes.length,
       nodes;
-   
+
    if (parsedArgs.type === "documents")
    {
       nodes = documentNodes;
@@ -202,34 +202,107 @@ function doclist_main()
       // TODO: Sorting with folders at end -- swap order of concat()
       nodes = folderNodes.concat(documentNodes);
    }
-   
+
    if (logger.isLoggingEnabled())
       logger.log("doclist.lib.js - totalRecords: " + totalRecords);
-   
+
    // Pagination
    var pageSize = args.size || nodes.length,
       pagePos = args.pos || "1",
       startIndex = (pagePos - 1) * pageSize;
-   
+
    if (!paged)
    {
-       // Trim the nodes array down to the page size
-       nodes = nodes.slice(startIndex, pagePos * pageSize);
+      // Trim the nodes array down to the page size
+      nodes = nodes.slice(startIndex, pagePos * pageSize);
    }
-   
+
    // Common or variable parent container?
    var parent = null;
-   
+
    if (!filterParams.variablePath)
    {
       // Parent node permissions (and Site role if applicable)
       parent = Evaluator.run(parsedArgs.pathNode, true);
    }
-   
+
    var thumbnail = null,
-       locationNode,
-       item;
-   
+      locationNode,
+      item;
+
+   // Loftux - Add function to parse parentNodes if symbolic linked
+   var getParentLocation = function (node, libraryRoot)
+   {
+      try
+      {
+         var location = null,
+            qnamePaths = node.qnamePath.split("/"),
+            displayPaths = node.displayPath.split("/");
+
+         if (libraryRoot == undefined && qnamePaths[2] != TYPE_SITES)
+         {
+            libraryRoot = companyhome;
+         }
+
+         if (libraryRoot)
+         {
+            // Generate the path from the supplied library root
+            location =
+            {
+               site: null,
+               container: null,
+               path: "/" + displayPaths.slice(libraryRoot.displayPath.split("/").length + 1, displayPaths.length).join("/"),
+               file: node.name,
+               nodeRef: node.nodeRef.toString()
+            };
+         }
+         else if ((qnamePaths.length > 4) && (qnamePaths[2] == TYPE_SITES))
+         {
+            var siteId = displayPaths[3],
+               siteNode = Common.getSite(siteId),
+               containerId = qnamePaths[4].substr(3);
+
+            if (siteNode != null)
+            {
+               var containerNode = siteNode.getContainer(containerId);
+               location =
+               {
+                  site: siteId,
+                  siteNode: siteNode,
+                  siteTitle: siteNode.title,
+                  sitePreset: siteNode.sitePreset,
+                  container: containerId,
+                  containerNode: containerNode,
+                  containerType: containerNode.typeShort,
+                  path: "/" + displayPaths.slice(5, displayPaths.length).join("/"),
+                  file: node.name,
+                  nodeRef: node.nodeRef.toString()
+               };
+            }
+         }
+
+         if (location == null)
+         {
+            location =
+            {
+               site: null,
+               container: null,
+               path: "/" + displayPaths.slice(2, displayPaths.length).join("/"),
+               file: node.name,
+               nodeRef: node.nodeRef.toString()
+            };
+         }
+
+         return location;
+      }
+      catch(e)
+      {
+         return null;
+      }
+   };
+
+   //Loftux End add function
+
    // Loop through and evaluate each node in this result set
    for each (node in nodes)
    {
@@ -261,13 +334,13 @@ function doclist_main()
             }
             else
             {
-                // Ensure we have Read permissions on the destination on the link object
+            // Ensure we have Read permissions on the destination on the link object
                 if (!locationNode.hasPermission("Read"))
                 {
                    --totalRecords;
                    continue;
                 }
-                location = Common.getLocation(locationNode, parsedArgs.libraryRoot);
+               location = Common.getLocation(locationNode, parsedArgs.libraryRoot);
             }
             // Parent node
             if (node.parent != null && node.parent.isContainer && node.parent.hasPermission("Read"))
@@ -289,10 +362,46 @@ function doclist_main()
                file: node.name
             };
          }
-         
+
+         // Loftux Start add: Find out if node is symbolicLinked
+         var parentAssocs = item.node.parentAssocs["cm:contains"];
+         if(parentAssocs && parentAssocs.length > 1)
+         {
+            var isPrimaryLocation, parents = [];
+            isPrimaryLocation = !!((parsedArgs.pathNode.nodeRef.toString()+'').toString() === (item.node.parent.nodeRef.toString()+'').toString());
+
+            for(var pi = 0; pi < parentAssocs.length; pi++)
+            {
+               // Ensure we have Read permissions on the destination on the link object
+               if (!parentAssocs[pi].hasPermission("Read")) continue;
+               var parentItem = {
+                  location: getParentLocation(parentAssocs[pi], parsedArgs.libraryRoot)
+               };
+
+               parents.push(parentItem);
+            }
+
+            // If we have variable path, do this extra check for isPrimaryLocation
+            if(filterParams.variablePath)
+            {
+               var currentSite = url.templateArgs['site'];
+               if(currentSite)
+               {
+                  isPrimaryLocation = !!(currentSite == parents[0].location.site);
+               }
+            }
+            item.symbolicLink =
+            {
+               parentLength: parentAssocs.length,
+               isPrimaryLocation: isPrimaryLocation,
+               parents: parents
+            };
+         }
+         // Loftux End 
+
          // Resolved location
          item.location = location;
-         
+
          items.push(item);
       }
       else
@@ -304,16 +413,16 @@ function doclist_main()
    // Array Remove - By John Resig (MIT Licensed)
    var fnArrayRemove = function fnArrayRemove(array, from, to)
    {
-     var rest = array.slice((to || from) + 1 || array.length);
-     array.length = from < 0 ? array.length + from : from;
-     return array.push.apply(array, rest);
+      var rest = array.slice((to || from) + 1 || array.length);
+      array.length = from < 0 ? array.length + from : from;
+      return array.push.apply(array, rest);
    };
-   
+
    /**
     * De-duplicate orignals for any existing working copies.
     * This can't be done in evaluator.lib.js as it has no knowledge of the current filter or UI operation.
     * Note: This may result in pages containing less than the configured amount of items (50 by default).
-   */
+    */
    for each (item in items)
    {
       if (item.workingCopy && item.workingCopy.isWorkingCopy)
@@ -330,18 +439,18 @@ function doclist_main()
          }
       }
    }
-   
+
    var paging =
    {
       totalRecords: totalRecords,
       startIndex: startIndex
    };
-   
+
    if (paged && (totalRecords == requestTotalCountMax))
    {
       paging.totalRecordsUpper = requestTotalCountMax;
    }
-   
+
    return (
    {
       luceneQuery: query,

@@ -1,0 +1,20 @@
+.doclist .symbolicLink-banner
+{
+    border: 1px solid #ffca7a;
+    clear: left;
+    font-weight: bold;
+    margin-bottom: 4px;
+    padding: 5px 0px 3px 5px;
+}
+
+.symbolicLinksList a,
+.symbolicLinksList a:visited,
+.symbolicLinksList a:hover
+{
+    text-decoration: none;
+}
+
+.symbolicLinksListForm
+{
+    margin-right: 5px !important;
+}
