@@ -17,10 +17,12 @@
         <module>share-po</module>
         <module>cmm-qa</module>
         <module>web-framework-commons</module>
+        <!--
         <module>web-editor</module>
         <module>web-editor-plugin</module>
         <module>web-editor-samples/customer-site</module>
         <module>wcmquickstart-module</module>
+        -->
         <module>alfresco</module>
     </modules>
 
