@@ -741,7 +741,7 @@
          imgId = node.nodeRef.nodeRef + imgIdSuffix, // DD added
          imgHtml;
       
-      if (isContainer)
+      if (isContainer || (isLink && node.linkedNode.isContainer))
       {
          imgHtml = '<img id="' + imgId + '" class="alf-gallery-item-thumbnail-img" src="' + this.getFolderIcon(record.node)+'" />';
       }
@@ -781,7 +781,7 @@
       // Just add the data table thumbnail once
       if (!document.getElementById(thumbnail.id))
       {
-         if (thumbnail.isContainer)
+         if (thumbnail.isContainer || (thumbnail.isLink && record.jsNode.linkedNode.isContainer))
          {
             elCell.innerHTML += '<span class="folder">' + (thumbnail.isLink ? '<span class="link"></span>' : '') + 
                   (scope.dragAndDropEnabled ? '<span class="droppable"></span>' : '') + 
@@ -790,7 +790,7 @@
          }
          else
          {
-            elCell.innerHTML += '<span class="thumbnail">' + (thumbnail.isLink ? '<span class="link"></span>' : '') + 
+            elCell.innerHTML += '<span class="alf-gallery-item-thumbnail">' + (thumbnail.isLink ? '<span class="link"></span>' : '') + 
                   Alfresco.DocumentList.generateFileFolderLinkMarkup(scope, record) + thumbnail.html + '</a></span>';
          }
          var thumbnailElement = document.getElementById(thumbnail.id);

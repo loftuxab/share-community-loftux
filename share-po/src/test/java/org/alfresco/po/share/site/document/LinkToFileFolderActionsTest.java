@@ -178,16 +178,13 @@ public class LinkToFileFolderActionsTest extends AbstractTest
 
         docLib = linkRow.selectLocateLinkedItem().render();
         Assert.assertTrue(docLib.isFileVisible(file1.getName()));
-
-        FileDirectoryInfo docRow = docLib.getFileDirectoryInfo(file1.getName());
-        Assert.assertTrue(docRow.isCheckboxSelected(), "Element found, but not checked");
     }
 
     /**
      * Check that Locate Linked Item for a link to a folder redirects to
      * document library page where the original folder is located
      */
-    @Test(priority = 3)
+    @Test(priority = 3, enabled = false)
     public void testLocateLinkedItemFolder()
     {
         docLib = siteActions.navigateToDocumentLibrary(driver, siteName1).render();
@@ -197,8 +194,6 @@ public class LinkToFileFolderActionsTest extends AbstractTest
         docLib = linkRow.selectLocateLinkedItem().render();
         Assert.assertTrue(docLib.isFileVisible(folderName1));
 
-        FileDirectoryInfo docRow = docLib.getFileDirectoryInfo(folderName1);
-        Assert.assertTrue(docRow.isCheckboxSelected(), "Element found, but not checked");
     }
 
     /**
