@@ -21,7 +21,15 @@ The result of build is found in
     share/target/share.war  
     share-services/target/alfresco-share-services-<version>.amp
 
-The entire project is built (except installer), look for other components in target folders.
+When the project is built, look for other components in target folders.  
+If you want to build the web-editor and wcmquickstart, uncomment them in root pom.  
+
+## Loftux Symbolic Linking.  
+This build includes Loftux Symbolic Linking as an extension to standard Alfresco Share. To enable/disable, manage your extensions at http://&lt;servername&gt;/share/page/modules/deploy (logged in with admin priviliges).  
+
+With this extension you can link files and folders to other locations within Alfresco Share sites so that they can be accessed navigating folders in many locations. This way you can avoid duplicating content.
+
+Compared to Alfresco built in "link" functionality this extension actually links content, whereas the built in is just a shortcut.  
 
 ## Issues
 We use the issue tracker to record the changes we have made to code. The changes we make are on behalf of Loftux AB customers. If you are not a Loftux AB customer, please file issues only if you are sure that the issue is due to a change that was made by us. All other issues should be filed in the official Alfresco issue tracker https://issues.alfresco.com. Before you do that, make sure that the issue can be reproduced by an Alfresco official build.
@@ -37,3 +45,6 @@ Yes, we will not make modifications that will change compatiblity. Just make sur
 
 # About Loftux AB
 Loftux AB, http://loftux.se http://loftux.com is a company based in Sweden that delivers implementations and addons to Alfresco Community Edition. Please visit our website should you want seek out the opportunity to use our services.
+
+## Warranty
+The LXCommunity ECM and included extensions is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. Commercial support is available from Loftux AB.

@@ -2,7 +2,7 @@
     <modules>
         <module>
             <id>Loftux Symbolic Linking</id>
-            <auto-deploy>false</auto-deploy>
+            <auto-deploy>true</auto-deploy>
             <version>1.0.0</version>
             <configurations>
                 <config evaluator="string-compare" condition="DocLibCustom">
