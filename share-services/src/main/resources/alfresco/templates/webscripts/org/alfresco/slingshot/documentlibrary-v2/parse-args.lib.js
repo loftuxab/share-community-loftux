@@ -104,8 +104,8 @@ var Common =
             }
             else
             {
-               qnamePaths = node.qnamePath.split("/"),
-                  displayPaths = node.displayPath.split("/");
+               qnamePaths = node.qnamePath.split("/");
+               displayPaths = node.displayPath.split("/");
             }
             // LOFTUX AB -  try to find the linked location
             if(linkedSite)
@@ -275,8 +275,8 @@ var ParseArgs =
                storeId = url.templateArgs.store_id,
                id = url.templateArgs.id;
 
-            nodeRef = storeType + "://" + storeId + "/" + id;
-            rootNode = libraryRoot || ParseArgs.resolveNode(nodeRef);
+            nodeRef = ParseArgs.resolveNode(storeType + "://" + storeId + "/" + id);
+            rootNode = libraryRoot || nodeRef;
             if (rootNode == null)
             {
                status.setCode(status.STATUS_NOT_FOUND, "Not a valid nodeRef: '" + nodeRef + "'");
@@ -358,7 +358,7 @@ var ParseArgs =
             }
 
             // It may still be in a folder that is linked
-            var parentFolder = pathNode.parent;
+            var parentFolder = (pathNode && pathNode.parent) ? pathNode.parent : null;
             while(!parentNode && parentFolder  && parentFolder.name != 'documentLibrary' && pathNode.name != 'documentLibrary')
             {
                parentAssocs = parentFolder.parentAssocs["cm:contains"];
@@ -376,8 +376,12 @@ var ParseArgs =
                      }
                   }
                }
-               parentFolder = parentFolder.parent;
+               parentFolder = parentFolder.parent ? parentFolder.parent : null;
             }
+         }
+
+         if(!parentNode && nodeRef) {
+            parentNode = nodeRef.parent;
          }
 
          // getLocation added with new param to parse linkedSite
@@ -402,7 +406,7 @@ var ParseArgs =
          {
             location.file = "";
          }
-
+         
          var objRet =
             {
                rootNode: rootNode,
@@ -410,7 +414,7 @@ var ParseArgs =
                libraryRoot: libraryRoot,
                location: location,
                path: path,
-               nodeRef: nodeRef,
+               nodeRef: nodeRef ? nodeRef.nodeRef + '' : null,
                type: type
             };
 

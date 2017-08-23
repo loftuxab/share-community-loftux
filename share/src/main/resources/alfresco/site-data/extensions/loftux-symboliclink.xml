@@ -2,8 +2,8 @@
     <modules>
         <module>
             <id>Loftux Symbolic Linking</id>
-            <auto-deploy>true</auto-deploy>
-            <version>1.0.0</version>
+            <auto-deploy>false</auto-deploy>
+            <version>1.0.1</version>
             <configurations>
                 <config evaluator="string-compare" condition="DocLibCustom">
                     <dependencies>
@@ -134,11 +134,13 @@
                             <param name="function">onActionLinkTo</param>
                             <evaluator negate="true">evaluator.doclib.action.isLocked</evaluator>
                             <evaluator>evaluator.isNotSymbolicLinkedOrPrimary</evaluator>
+                            <evaluator>evaluator.doclib.action.siteBased</evaluator>
                         </action>
 
                         <action id="document-link-list" type="javascript" label="actions.document.link-list">
                             <param name="function">onActionLinkList</param>
                             <evaluator>evaluator.isSymbolicLinked</evaluator>
+                            <evaluator>evaluator.doclib.action.siteBased</evaluator>
                         </action>
                         <action id="document-link-delete" type="javascript" label="actions.document.link-delete">
                             <param name="function">onActionLinkDelete</param>
@@ -147,6 +149,7 @@
                             </permissions>
                             <evaluator negate="true">evaluator.doclib.action.isLocked</evaluator>
                             <evaluator>evaluator.isSymbolicLinkedAndNotPrimary</evaluator>
+                            <evaluator>evaluator.doclib.action.siteBased</evaluator>
                         </action>
 
                     </actions>
