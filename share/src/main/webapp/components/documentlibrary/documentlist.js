@@ -4105,13 +4105,12 @@
          {
             // Should be a filter in the arguments
             var filter = Alfresco.util.cleanBubblingObject(obj),
-               strFilter = window.escape(obj.filterId) +
+               strFilter = window.escape($html(obj.filterId)) +
                   (typeof obj.filterData !== "undefined" ?
                      "|" + window.escape(obj.filterData) + (typeof obj.filterDisplay !== "undefined" ? "|" + window.escape(obj.filterDisplay) : "") :
                      "");
 
             Alfresco.logger.debug("DL_onChangeFilter: ", filter);
-
             // Only allow drag and drop behaviour if the filter is changed to an actual
             // path (if the filter is anything else such as tags then there won't be a specific
             // location to upload to!)...
@@ -4126,7 +4125,7 @@
 
             var objNav =
             {
-               filter: strFilter
+               filter: $html(strFilter)
             };
 
             // Initial navigation won't fire the History event.
