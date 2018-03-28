@@ -3,7 +3,7 @@
         <module>
             <id>Loftux Symbolic Linking</id>
             <auto-deploy>false</auto-deploy>
-            <version>1.0.1</version>
+            <version>1.0.2</version>
             <configurations>
                 <config evaluator="string-compare" condition="DocLibCustom">
                     <dependencies>
