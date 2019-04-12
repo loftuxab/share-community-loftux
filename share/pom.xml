@@ -160,6 +160,7 @@
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
+            <version>1.3.3</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -269,11 +270,12 @@
 
         <!-- This is used for the LESS CSS processing. It allows us to include LESS code in both
              the Theme XML files and in widget CSS files. We deliberately exclude it's preferred
-             Rhino version so as to avoid conflicts with our own dependencies. -->
+             Rhino version so as to avoid conflicts with our own dependencies. 
+             Using pateched version, MNT-20234 -->
         <dependency>
-            <groupId>com.asual.lesscss</groupId>
-            <artifactId>lesscss-engine</artifactId>
-            <version>1.5.1</version>
+          <groupId>org.alfresco.3rdparty.com.asual.lesscss</groupId>
+          <artifactId>lesscss-engine</artifactId>
+          <version>1.5.1-patched</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.mozilla</groupId>
@@ -286,7 +288,7 @@
         <dependency>
             <groupId>se.loftux.alfresco.i18n</groupId>
             <artifactId>share-sv-se</artifactId>
-            <version>5.2.2.2</version>
+            <version>5.2.2.3-SNAPSHOT</version>
         </dependency>
 
     </dependencies>
